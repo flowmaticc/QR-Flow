@@ -1,13 +1,11 @@
 # Compila, prueba, firma y publica QR-Flow en GitHub Releases. Solo a mano:
 #   Actions → Publicar → Run workflow (opcionalmente, como pre-release).
 #
-# Secretos necesarios (Settings → Secrets and variables → Actions), los mismos nombres que en key.properties:
-#   KEYSTORE_BASE64      el .jks/.keystore en base64
-#   KEYSTORE_PASSWORD    contraseña del almacén
-#   KEY_ALIAS            alias de la clave
-#   KEY_PASSWORD         contraseña de la clave
-# Variable opcional CERT_SHA256: huella esperada del certificado; si está, se comprueba antes de publicar.
-# Conviene usar la misma clave que Garbillo para que la integración con permiso "signature" funcione.
+# Secretos necesarios (los mismos nombres y la misma clave que Garbillo). Se configuran con
+#   scripts/configurar-firma.ps1   (lee la clave de G:\garbillo-clave-firma o de ~/.bloqueador-keys)
+#   RELEASE_KEYSTORE_BASE64, RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD
+# Variable CERT_SHA256: huella esperada del certificado; se comprueba antes de publicar.
+# Usar la misma clave que Garbillo permite la integración entre ambas con permiso "signature".
 #
 # Seguridad: el job que firma no puede escribir en el repositorio; el que publica no ve la clave.
 
@@ -59,13 +57,13 @@ jobs:
 
       - name: Preparar la clave de firma
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::Faltan los secretos de firma (KEYSTORE_BASE64…). Ver la cabecera de este workflow."; exit 1
+            echo "::error::Faltan los secretos de firma (RELEASE_KEYSTORE_BASE64…). Ver la cabecera de este workflow."; exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           {

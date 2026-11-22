@@ -67,7 +67,10 @@ kotlin {
     }
 }
 
-val keystorePropertiesFile = rootProject.file("key.properties")
+// Signing: key.properties in the project (CI writes it), otherwise the same key as Garbillo,
+// read from ~/.bloqueador-keys/keystore.properties. Neither file is ever committed.
+val keystorePropertiesFile = rootProject.file("key.properties").takeIf { it.exists() }
+    ?: File(System.getProperty("user.home"), ".bloqueador-keys/keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
