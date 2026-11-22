@@ -9,10 +9,12 @@ Lector QR **seguro y privado** para Android.
   DGT, Agencia Tributaria…), acortadores, dominios de estafa, descargas `.apk`/`.exe`, redirecciones
   ocultas, caracteres invisibles, esquemas peligrosos (`javascript:`, `intent:`, `data:`…), códigos
   MMI/USSD (`*21*…#`), números de tarificación especial, SMS a números cortos y WiFi abiertas o WEP.
-  Pide confirmación antes de abrir algo sospechoso y bloquea lo peligroso.
+  También reconoce direcciones sin `https://`, sigue las redirecciones (Google, Facebook…) hasta el
+  destino real y detecta webs en alojamientos gratuitos, formularios y marcas escondidas en la ruta.
+  Pide confirmación antes de abrir algo sospechoso y bloquea lo peligroso. Avisos en 20 idiomas.
 - **Modo incógnito**: las lecturas no se guardan, lo que copias se oculta y se borra al minuto, y
   se bloquean las capturas. Se activa con el botón del ojo en la cámara o con el atajo del icono
-  («Escanear en incógnito»). También puedes quitar una lectura concreta con «No guardar esta lectura».
+  («Escanear en incógnito»), y se apaga solo tras 30 minutos sin usar la app. También puedes quitar una lectura concreta con «No guardar esta lectura».
 - **Historial cifrado** (AES-256-GCM con clave en el Android Keystore), desactivable, con borrado
   automático (1, 7 o 30 días) y **sin contraseñas WiFi** por defecto.
 - **Más tipos de QR**: SMS, ubicación (`geo:`), eventos de calendario, MECARD, MATMSG y enlaces a
@@ -26,8 +28,18 @@ Lector QR **seguro y privado** para Android.
 
 ## Instalar
 
+[![Descargar APK](https://img.shields.io/github/v/release/flowmaticc/QR-Flow?label=Descargar%20APK&logo=github&style=for-the-badge&color=6A1B9A&labelColor=24292f)](https://github.com/flowmaticc/QR-Flow/releases/latest)
+[![Añadir a Obtainium](https://img.shields.io/badge/Obtainium-A%C3%B1adir-6438B5?style=for-the-badge)](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.flowmaticc.qrflow%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fflowmaticc%2FQR-Flow%22%2C%22author%22%3A%22flowmaticc%22%2C%22name%22%3A%22QR-Flow%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%7D%22%7D)
+
 Descarga `qr-flow-X.Y.Z.apk` de la [última versión](https://github.com/flowmaticc/QR-Flow/releases/latest)
-y ábrelo en el móvil (Android 7 o superior). Las versiones se publican a mano desde
+y ábrelo en el móvil (Android 7 o superior). QR-Flow no tiene Internet y no puede avisarte de
+versiones nuevas: con [Obtainium](https://github.com/ImranR98/Obtainium) (botón de arriba, ya
+configurado) te llegarán solas.
+
+**Comprueba que el APK es auténtico.** Va firmado con la misma clave que Garbillo; su huella SHA-256 es
+`ee:5b:77:ee:24:58:c5:a6:a4:5e:3b:c6:a3:da:ac:ee:fb:31:79:19:49:3d:4d:85:8e:4f:46:a9:72:56:83:ce`
+(con el SDK de Android: `apksigner verify --print-certs qr-flow-X.Y.Z.apk`). Cómo llevarla a
+IzzyOnDroid y F-Droid: [docs/PUBLICAR_TIENDAS.md](docs/PUBLICAR_TIENDAS.md). Las versiones se publican a mano desde
 *Actions → Publicar*, firmadas y comprobadas: el workflow falla si el APK pidiera permiso de Internet.
 
 ## Compilar

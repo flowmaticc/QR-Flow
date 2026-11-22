@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">الصيغ المدعومة</string>
     <string name="help_supported_formats_desc">رموز QR، EAN-8، EAN-13، Code 128، Code 39، Code 93، UPC-E، PDF417، Aztec، وData Matrix.</string>
     <string name="navigate_back">رجوع</string>
+    <string name="shortcut_scan_incognito">مسح خفي</string>
+    <string name="camera_gesture_hint">اضغط على الصورة للتركيز · باعد بين إصبعين للتكبير</string>
+    <string name="onboarding_step5_title">ينبّهك إلى الرموز الخطرة</string>
+    <string name="onboarding_step5_desc">قبل فتح أي شيء، يفحص QR-Flow الرمز على هاتفك ويعرض تحذيرًا أخضر أو أصفر أو أحمر مع الموقع الحقيقي الذي يؤدي إليه.</string>
 </resources>

@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">支持的格式</string>
     <string name="help_supported_formats_desc">二维码、EAN-8、EAN-13、Code 128、Code 39、Code 93、UPC-E、PDF417、Aztec 和 Data Matrix。</string>
     <string name="navigate_back">返回</string>
+    <string name="shortcut_scan_incognito">无痕扫描</string>
+    <string name="camera_gesture_hint">点击画面对焦 · 两指张开缩放</string>
+    <string name="onboarding_step5_title">提醒你注意危险的码</string>
+    <string name="onboarding_step5_desc">在打开任何内容之前，QR-Flow 会在你的手机上检查这个码，并用绿色、黄色或红色提示，显示它真正通向的网站。</string>
 </resources>

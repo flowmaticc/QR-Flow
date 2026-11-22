@@ -103,6 +103,55 @@ class QrRiskAnalyzerTest {
         assertEquals(RiskLevel.DANGER, r.level)
     }
 
+    // ---- v1.1: gaps found in the audit
+
+    @Test fun schemelessWwwIsAnalysed() {
+        val c = QrContentType.fromRawValue("www.paypal-verify.com")
+        assertTrue(c is QrContentType.Url)
+        assertEquals("https://www.paypal-verify.com", (c as QrContentType.Url).url)
+        assertEquals(RiskLevel.DANGER, QrRiskAnalyzer.analyze(c).level)
+    }
+
+    @Test fun schemelessWithPathIsUrl() = assertTrue(QrContentType.fromRawValue("example.com/menu") is QrContentType.Url)
+    @Test fun plainWordWithDotStaysText() = assertTrue(QrContentType.fromRawValue("informe.pdf") is QrContentType.Text)
+
+    @Test fun googleRedirectShowsFinalDestination() {
+        val r = analyze("https://www.google.com/url?q=https://evil.top/login&sa=D")
+        assertEquals("evil.top", r.realDomain)
+        assertTrue(RiskReason.EMBEDDED_REDIRECT in r.reasons)
+        assertTrue(RiskReason.SUSPICIOUS_TLD in r.reasons)
+    }
+
+    @Test fun facebookRedirectToBrandPhish() {
+        val r = analyze("https://l.facebook.com/l.php?u=https%3A%2F%2Fcorreos-aduanas.top%2Fpago")
+        assertEquals(RiskLevel.DANGER, r.level)
+        assertEquals("correos-aduanas.top", r.realDomain)
+    }
+
+    @Test fun sharedHostingIsTheSubdomain() {
+        val r = analyze("https://caixabank-es.web.app/acceso")
+        assertEquals("caixabank-es.web.app", r.realDomain)
+        assertTrue(RiskReason.BRAND_IMPERSONATION in r.reasons)
+        assertTrue(RiskReason.USER_CONTENT_HOST in r.reasons)
+    }
+
+    @Test fun googleFormsIsUserContent() = assertTrue(RiskReason.USER_CONTENT_HOST in reasons("https://docs.google.com/forms/d/e/1FAIpQLSx/viewform"))
+    @Test fun ipfsIsUserContent() = assertTrue(RiskReason.USER_CONTENT_HOST in reasons("https://ipfs.io/ipfs/QmXyz/login.html"))
+    @Test fun googleDocsHomeIsSafe() = assertEquals(RiskLevel.SAFE, analyze("https://www.google.com/").level)
+
+    @Test fun brandDomainInPath() {
+        val r = analyze("https://evil.com/paypal.com/login")
+        assertEquals(RiskLevel.DANGER, r.level)
+        assertTrue(RiskReason.BRAND_IN_PATH in r.reasons)
+    }
+
+    @Test fun brandWordWithScamWordInPath() = assertTrue(RiskReason.BRAND_IN_PATH in reasons("https://tienda-ejemplo.com/santander/verificar"))
+    @Test fun newsAboutBrandIsFine() = assertFalse(RiskReason.BRAND_IN_PATH in reasons("https://www.elpais.com/economia/2026/bbva-resultados.html"))
+    @Test fun officialSiteMentioningItselfIsFine() = assertEquals(RiskLevel.SAFE, analyze("https://www.paypal.com/es/paypal.com/login").level)
+
+    @Test fun secureSubdomainOfRealSiteIsSafe() = assertEquals(RiskLevel.SAFE, analyze("https://secure.booking.com/myreservations.html").level)
+    @Test fun scamWordsInRegisteredDomainStillFlagged() = assertTrue(RiskReason.PHISHING_KEYWORDS in reasons("https://login-verify.example-bank.com"))
+
     @Test fun registrableDomain() {
         assertEquals("example.co.uk", QrRiskAnalyzer.registrableDomain("a.b.example.co.uk"))
         assertEquals("agenciatributaria.gob.es", QrRiskAnalyzer.registrableDomain("sede.agenciatributaria.gob.es"))

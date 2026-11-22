@@ -69,7 +69,10 @@ class MainActivity : ComponentActivity() {
     private fun handleIncognitoIntent(intent: Intent?) {
         // Only ever turns incognito on, so any app may send it without risk.
         if (intent?.action == ACTION_SCAN_INCOGNITO) {
-            getSharedPreferences("qrieux", MODE_PRIVATE).edit().putBoolean("qf_incognito", true).apply()
+            getSharedPreferences("qrieux", MODE_PRIVATE).edit()
+                .putBoolean("qf_incognito", true)
+                .putInt("qf_incognito_last_seen_min", (System.currentTimeMillis() / 60_000L).toInt())
+                .apply()
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         }
     }

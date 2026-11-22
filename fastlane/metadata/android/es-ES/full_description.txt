@@ -1,0 +1,21 @@
+QR-Flow es un lector de códigos QR y de barras pensado para que cualquiera, también nuestros mayores, lea códigos sin miedo a las estafas. No tiene anuncios, ni cuentas, ni permiso de Internet: nada de lo que lees sale de tu móvil.
+
+<b>Te avisa antes de abrir nada.</b> Tras cada lectura, un recuadro verde, amarillo o rojo te dice si el código parece seguro y te muestra la web real a la que llevaría. Detecta, sin conexión:
+<ul>
+<li>Webs que imitan a bancos, organismos y empresas (BBVA, Santander, CaixaBank, Correos, DGT, Agencia Tributaria, PayPal, Amazon…).</li>
+<li>Enlaces disfrazados: «@» engañosa, letras parecidas (punycode), direcciones IP, redirecciones ocultas, acortadores y alojamientos gratuitos.</li>
+<li>Descargas de apps (.apk) y enlaces que ejecutan código.</li>
+<li>Códigos que desvían tus llamadas (*21*…#), números de tarificación especial y SMS a números cortos de pago.</li>
+<li>Redes WiFi abiertas o con seguridad obsoleta.</li>
+</ul>
+Lo sospechoso pide confirmación y lo peligroso se bloquea.
+
+<b>Modo incógnito.</b> Lee un código sin que quede en el historial: lo que copies se oculta y se borra al minuto, y se bloquean las capturas. Se apaga solo tras 30 minutos sin usar la app.
+
+<b>Privado de verdad.</b> El historial se guarda cifrado en el móvil, se puede desactivar o borrar automáticamente, y no guarda las contraseñas WiFi que escaneas.
+
+<b>Lee de todo:</b> enlaces, WiFi, contactos (vCard y MECARD), teléfonos, SMS, correos, ubicaciones, eventos de calendario, enlaces a apps y códigos de barras de productos. También desde fotos de la galería o compartiendo una imagen. Toca para enfocar y usa el zoom con códigos pequeños o lejanos.
+
+<b>Crea códigos QR</b> para una web, un correo, un teléfono, tu WiFi o cualquier texto.
+
+QR-Flow es software libre (licencia MIT) y se basa en QRieux, de Emmanuel Hilson.

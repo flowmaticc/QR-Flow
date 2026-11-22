@@ -1,0 +1,1 @@
+Lector QR que avisa de códigos peligrosos. Sin Internet, sin anuncios.

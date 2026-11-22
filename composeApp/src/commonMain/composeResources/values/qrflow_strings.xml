@@ -63,4 +63,19 @@
     <string name="settings_done">Done</string>
     <string name="history_disabled">History is turned off. You can enable it in Privacy.</string>
     <string name="settings_privacy_footer">History is encrypted on this phone and is never uploaded. QR-Flow has no internet permission.</string>
+    <string name="risk_reason_brand_in_path">It names a known brand or its website in the address path, but the site belongs to someone else.</string>
+    <string name="risk_reason_user_content_host">It is hosted on a free service or a form where anyone can publish a page under that service\'s name.</string>
+    <string name="help_security_title">Warnings about dangerous codes</string>
+    <string name="help_security_desc">After every scan a coloured box tells you if the code looks safe (green), deserves care (yellow) or looks malicious (red), and shows the website you would really visit. Risky actions ask you to confirm, and dangerous ones are blocked. Everything is checked on your phone, without internet.</string>
+    <string name="help_incognito_title">Incognito mode</string>
+    <string name="help_incognito_desc">Tap the eye button at the top of the camera. While it is purple, scans are not saved, anything you copy is hidden and erased after a minute, and screenshots are blocked. It turns itself off after 30 minutes without using the app. You can also start it from the app icon: press and hold it, then choose Scan incognito.</string>
+    <string name="help_zoom_title">Small, far or blurry codes</string>
+    <string name="help_zoom_desc">Tap the image to focus on that spot. Use the zoom button under the frame (1×, 2×, 4×) or pinch with two fingers to get closer.</string>
+    <string name="help_privacy_title">Your privacy</string>
+    <string name="help_privacy_desc">QR-Flow has no internet permission. History stays encrypted on this phone and never leaves it. In History, the shield button lets you turn history off, delete it automatically and choose whether Wi-Fi passwords are saved.</string>
+    <string name="incognito_auto_off">Incognito mode turned off after 30 minutes without using the app</string>
+    <string name="history_unreadable">The previous history could not be read because this phone\'s encryption key changed. A new history has been started.</string>
+    <string name="history_write_failed">This scan could not be saved to the encrypted history.</string>
+    <string name="wifi_android10_hint">Network saved. If Android asks in a notification whether to allow suggested Wi-Fi networks, accept it and the phone will join. You can also tap the network in the Wi-Fi panel: the password has been copied and is erased after a minute.</string>
+    <string name="help_understood">OK</string>
 </resources>

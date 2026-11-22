@@ -1,0 +1,6 @@
+• Detecta direcciones sin https, sigue redirecciones hasta el destino real y reconoce webs en alojamientos gratuitos y formularios.
+• El botón Atrás vuelve atrás dentro de la app.
+• El modo incógnito se apaga solo tras 30 minutos sin usar la app.
+• No vuelve a leer el mismo código mientras sigue delante de la cámara.
+• Ayuda nueva: avisos de seguridad, incógnito, zoom y privacidad.
+• Avisos traducidos a los 20 idiomas.

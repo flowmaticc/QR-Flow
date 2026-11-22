@@ -67,6 +67,10 @@ sealed class QrContentType {
         private val URL_PATTERN = Regex("^https?://.*", RegexOption.IGNORE_CASE)
         private val EMAIL_PATTERN = Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")
         private val PHONE_PATTERN = Regex("^\\+?[0-9\\s\\-()]{7,}$")
+        private val SCHEMELESS_URL = Regex(
+            "^[a-z0-9-]+(\\.[a-z0-9-]+)*\\.[a-z]{2,24}(:\\d{1,5})?([/?#]\\S*)?$",
+            RegexOption.IGNORE_CASE
+        )
         private val HIERARCHICAL_URI = Regex("^([a-zA-Z][a-zA-Z0-9+.-]{1,31})://\\S+$")
         private val SCHEME_PREFIX = Regex("^([a-zA-Z][a-zA-Z0-9+.-]{1,31}):\\S+$")
 
@@ -91,6 +95,9 @@ sealed class QrContentType {
                 trimmed.startsWith("mailto:", ignoreCase = true) -> Email(trimmed.substring(7))
                 trimmed.startsWith("MATMSG:", ignoreCase = true) -> parseMatMsg(trimmed) ?: Text(trimmed)
                 EMAIL_PATTERN.matches(trimmed) -> Email(trimmed)
+                // "www.example.com" or "example.com/path": phones open these as https links.
+                SCHEMELESS_URL.matches(trimmed) &&
+                    (trimmed.startsWith("www.", ignoreCase = true) || trimmed.contains('/')) -> Url("https://$trimmed")
                 trimmed.startsWith("tel:", ignoreCase = true) -> Phone(trimmed.substring(4))
                 trimmed.startsWith("smsto:", ignoreCase = true) ||
                     trimmed.startsWith("sms:", ignoreCase = true) ||

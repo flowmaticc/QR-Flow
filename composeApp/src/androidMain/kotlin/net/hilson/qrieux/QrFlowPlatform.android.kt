@@ -40,6 +40,13 @@ internal object HistoryCipher {
         return generator.generateKey()
     }
 
+    /** Deletes the key so the next encrypt() creates a fresh one. */
+    fun resetKey() {
+        try {
+            KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.deleteEntry(ALIAS)
+        } catch (_: Exception) {}
+    }
+
     fun encrypt(plain: String): String? = try {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key())
@@ -49,14 +56,34 @@ internal object HistoryCipher {
         null
     }
 
-    fun decrypt(stored: String): String? = try {
-        val data = Base64.decode(stored.removePrefix(PREFIX), Base64.NO_WRAP)
-        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, data, 0, IV_SIZE))
-        String(cipher.doFinal(data, IV_SIZE, data.size - IV_SIZE), Charsets.UTF_8)
-    } catch (_: Exception) {
-        null
+    sealed class Read {
+        data class Ok(val text: String) : Read()
+        /** The key no longer exists or no longer matches: this data can never be read again. */
+        object KeyLost : Read()
+        /** Anything else (Keystore busy, I/O…): the data may still be fine, leave it alone. */
+        object Error : Read()
     }
+
+    fun decrypt(stored: String): Read {
+        val existing = try {
+            KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.getKey(ALIAS, null) as? SecretKey
+        } catch (_: Exception) {
+            return Read.Error
+        } ?: return Read.KeyLost
+        return try {
+            val data = Base64.decode(stored.removePrefix(PREFIX), Base64.NO_WRAP)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, existing, GCMParameterSpec(128, data, 0, IV_SIZE))
+            Read.Ok(String(cipher.doFinal(data, IV_SIZE, data.size - IV_SIZE), Charsets.UTF_8))
+        } catch (_: javax.crypto.AEADBadTagException) {
+            Read.KeyLost
+        } catch (_: Exception) {
+            Read.Error
+        }
+    }
+
+    /** Set when the stored history could not be read for a transient reason: saving would overwrite it. */
+    @Volatile var writeBlocked = false
 }
 
 actual fun setScreenSecure(context: PlatformContext, secure: Boolean) {

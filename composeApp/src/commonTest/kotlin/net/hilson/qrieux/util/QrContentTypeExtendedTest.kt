@@ -83,6 +83,13 @@ class QrContentTypeExtendedTest {
         kotlin.test.assertNull(net.hilson.qrieux.history.findRecentDuplicate(entries, HistoryEntryType.GENERATE, "WIFI:T:WPA;S:Casa;;", 150_000))
     }
 
+    @Test fun incognitoExpiry() {
+        kotlin.test.assertTrue(net.hilson.qrieux.history.incognitoExpired(lastSeenMin = 1_000, nowMin = 1_030))
+        kotlin.test.assertFalse(net.hilson.qrieux.history.incognitoExpired(lastSeenMin = 1_000, nowMin = 1_029))
+        // Never recorded: do not switch it off blindly.
+        kotlin.test.assertFalse(net.hilson.qrieux.history.incognitoExpired(lastSeenMin = 0, nowMin = 99_999))
+    }
+
     @Test fun prune() {
         val entries = listOf(
             HistoryEntry("a", 1_000, HistoryEntryType.SCAN, "x"),

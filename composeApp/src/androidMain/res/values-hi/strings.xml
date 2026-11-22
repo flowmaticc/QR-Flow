@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">समर्थित प्रारूप</string>
     <string name="help_supported_formats_desc">QR कोड, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec और Data Matrix।</string>
     <string name="navigate_back">वापस जाएं</string>
+    <string name="shortcut_scan_incognito">इनकॉग्निटो स्कैन</string>
+    <string name="camera_gesture_hint">फोकस के लिए टैप करें · ज़ूम के लिए उंगलियां फैलाएं</string>
+    <string name="onboarding_step5_title">खतरनाक कोड से आगाह करता है</string>
+    <string name="onboarding_step5_desc">कुछ भी खोलने से पहले QR-Flow आपके फोन पर कोड जाँचता है और हरी, पीली या लाल चेतावनी के साथ वह असली साइट दिखाता है जहाँ वह ले जाता है।</string>
 </resources>

@@ -1,0 +1,6 @@
+• Detects links without https, follows redirects to the real destination and recognises sites on free hosting and forms.
+• The Back button goes back inside the app.
+• Incognito mode turns itself off after 30 minutes without using the app.
+• The same code is not read again while it stays in front of the camera.
+• New help: security warnings, incognito, zoom and privacy.
+• Warnings translated into all 20 languages.

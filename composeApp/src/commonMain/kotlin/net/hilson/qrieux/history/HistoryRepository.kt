@@ -30,7 +30,32 @@ object PrivacySettings {
     fun setSaveWifiPasswords(c: PlatformContext, v: Boolean) = setBoolSetting(c, SAVE_WIFI_PASSWORDS, v)
     fun retentionDays(c: PlatformContext) = getIntSetting(c, RETENTION_DAYS, 0)
     fun setRetentionDays(c: PlatformContext, v: Int) = setIntSetting(c, RETENTION_DAYS, v)
+
+    // Incognito switches itself off after a while without using the app, so it is never left on by accident.
+    const val INCOGNITO_LAST_SEEN_MIN = "incognito_last_seen_min"
+    const val INCOGNITO_IDLE_LIMIT_MIN = 30
+
+    /** Set by the platform when the encrypted history could not be read or written. */
+    const val HISTORY_UNREADABLE = "history_unreadable"
+    const val HISTORY_WRITE_FAILED = "history_write_failed"
+
+    private fun nowMinutes() = (currentTimeMillis() / 60_000L).toInt()
+
+    fun markAppSeen(c: PlatformContext) = setIntSetting(c, INCOGNITO_LAST_SEEN_MIN, nowMinutes())
+
+    /** Turns incognito off when the app has been idle for too long. Returns true if it did. */
+    fun expireIncognitoIfIdle(c: PlatformContext): Boolean {
+        if (!incognito(c)) return false
+        val last = getIntSetting(c, INCOGNITO_LAST_SEEN_MIN, 0)
+        if (!incognitoExpired(last, nowMinutes())) return false
+        setIncognito(c, false)
+        return true
+    }
 }
+
+/** [lastSeenMin] 0 means "never recorded": an old install that had incognito on is not switched off blindly. */
+fun incognitoExpired(lastSeenMin: Int, nowMin: Int, limitMin: Int = PrivacySettings.INCOGNITO_IDLE_LIMIT_MIN): Boolean =
+    lastSeenMin > 0 && nowMin - lastSeenMin >= limitMin
 
 /** Drops the Wi-Fi password from a WIFI: payload; anything else is returned unchanged. */
 fun redactForHistory(rawValue: String): String {
@@ -50,7 +75,10 @@ fun recordHistory(
     generatorType: String? = null
 ): String? {
     if (PrivacySettings.incognito(context) || !PrivacySettings.historyEnabled(context)) return null
-    val value = if (PrivacySettings.saveWifiPasswords(context)) rawValue else redactForHistory(rawValue)
+    // A network you created yourself keeps its password (the history is encrypted): without it,
+    // "Edit" in History could not rebuild the code. Scanned networks follow the privacy setting.
+    val keepPassword = type == HistoryEntryType.GENERATE || PrivacySettings.saveWifiPasswords(context)
+    val value = if (keepPassword) rawValue else redactForHistory(rawValue)
     val now = currentTimeMillis()
     // Pointing at the same code and tapping "Scan again" reads it again: keep a single entry.
     findRecentDuplicate(loadHistory(context), type, value, now)?.let { return it.id }

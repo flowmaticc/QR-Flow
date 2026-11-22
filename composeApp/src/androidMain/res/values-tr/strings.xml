@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">Desteklenen Formatlar</string>
     <string name="help_supported_formats_desc">QR kodlar, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec ve Data Matrix.</string>
     <string name="navigate_back">Geri</string>
+    <string name="shortcut_scan_incognito">Gizli tara</string>
+    <string name="camera_gesture_hint">Odaklamak için dokunun · yakınlaştırmak için iki parmağınızı açın</string>
+    <string name="onboarding_step5_title">Tehlikeli kodlara karşı uyarır</string>
+    <string name="onboarding_step5_desc">Bir şeyi açmadan önce QR-Flow kodu telefonunuzda kontrol eder ve gideceği gerçek siteyle birlikte yeşil, sarı veya kırmızı bir uyarı gösterir.</string>
 </resources>

@@ -1,0 +1,1 @@
+QR scanner that warns you about dangerous codes. No internet, no ads.

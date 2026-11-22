@@ -60,4 +60,6 @@
     <string name="navigate_back">Navigate back</string>
     <string name="shortcut_scan_incognito">Scan incognito</string>
     <string name="camera_gesture_hint">Tap the image to focus · pinch to zoom</string>
+    <string name="onboarding_step5_title">Warns you about dangerous codes</string>
+    <string name="onboarding_step5_desc">Before you open anything, QR-Flow checks the code on your phone and shows a green, yellow or red warning with the real website it leads to.</string>
 </resources>

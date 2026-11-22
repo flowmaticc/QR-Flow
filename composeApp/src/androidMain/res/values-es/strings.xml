@@ -60,4 +60,6 @@
     <string name="navigate_back">Volver</string>
     <string name="shortcut_scan_incognito">Escanear en incógnito</string>
     <string name="camera_gesture_hint">Toca la imagen para enfocar · pellizca para acercar</string>
+    <string name="onboarding_step5_title">Te avisa de los códigos peligrosos</string>
+    <string name="onboarding_step5_desc">Antes de abrir nada, QR-Flow revisa el código en tu móvil y te muestra un aviso verde, amarillo o rojo con la web real a la que lleva.</string>
 </resources>

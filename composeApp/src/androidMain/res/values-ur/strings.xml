@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">معاون فارمیٹس</string>
     <string name="help_supported_formats_desc">QR کوڈز، EAN-8، EAN-13، Code 128، Code 39، Code 93، UPC-E، PDF417، Aztec، اور Data Matrix۔</string>
     <string name="navigate_back">واپس جائیں</string>
+    <string name="shortcut_scan_incognito">انکاگنیٹو اسکین</string>
+    <string name="camera_gesture_hint">فوکس کے لیے ٹیپ کریں · زوم کے لیے انگلیاں پھیلائیں</string>
+    <string name="onboarding_step5_title">خطرناک کوڈز سے خبردار کرتا ہے</string>
+    <string name="onboarding_step5_desc">کچھ بھی کھولنے سے پہلے QR-Flow آپ کے فون پر کوڈ جانچتا ہے اور سبز، پیلی یا سرخ وارننگ کے ساتھ وہ اصل سائٹ دکھاتا ہے جس تک وہ لے جاتا ہے۔</string>
 </resources>

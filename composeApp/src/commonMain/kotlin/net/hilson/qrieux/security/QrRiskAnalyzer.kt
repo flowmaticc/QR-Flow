@@ -21,6 +21,8 @@ enum class RiskReason(val level: RiskLevel) {
     EXECUTABLE_DOWNLOAD(RiskLevel.DANGER),
     HIDDEN_CHARACTERS(RiskLevel.DANGER),
     ENCODED_HOST(RiskLevel.DANGER),
+    BRAND_IN_PATH(RiskLevel.DANGER),
+    USER_CONTENT_HOST(RiskLevel.CAUTION),
     INSECURE_HTTP(RiskLevel.CAUTION),
     URL_SHORTENER(RiskLevel.CAUTION),
     SUSPICIOUS_TLD(RiskLevel.CAUTION),
@@ -136,7 +138,9 @@ object QrRiskAnalyzer {
         val query: String
     )
 
-    fun parseUrl(url: String): ParsedUrl? {
+    fun parseUrl(input: String): ParsedUrl? {
+        // "www.example.com/x" has no scheme: a browser would open it as https.
+        val url = if (input.contains("://")) input else "https://$input"
         val schemeEnd = url.indexOf("://")
         if (schemeEnd <= 0) return null
         val scheme = url.substring(0, schemeEnd).lowercase()
@@ -166,7 +170,7 @@ object QrRiskAnalyzer {
 
     private data class UrlAnalysis(val reasons: Set<RiskReason>, val realDomain: String?, val host: String?)
 
-    private fun analyzeUrl(url: String): UrlAnalysis {
+    private fun analyzeUrl(url: String, depth: Int = 0): UrlAnalysis {
         val reasons = linkedSetOf<RiskReason>()
         val parsed = parseUrl(url) ?: return UrlAnalysis(emptySet(), null, null)
         val host = parsed.host
@@ -190,18 +194,85 @@ object QrRiskAnalyzer {
             reasons += RiskReason.BRAND_IMPERSONATION
         }
 
-        val hostTokens = tokens(host.substringBeforeLast('.'))
-        if (!isOfficialDomain(host) && hostTokens.any { it in PHISHING_KEYWORDS }) reasons += RiskReason.PHISHING_KEYWORDS
+        // Scam words in the domain the attacker registered (secure-login.xyz) are a strong signal; one in a
+        // subdomain of an established site (secure.booking.com) is not, unless several pile up.
+        if (!isOfficialDomain(host) && !isIpAddress(host)) {
+            val registeredLabel = tokens(domain.substringBeforeLast('.'))
+            val subdomainTokens = tokens(host.removeSuffix(domain).trimEnd('.'))
+            if (registeredLabel.any { it in PHISHING_KEYWORDS } || subdomainTokens.count { it in PHISHING_KEYWORDS } >= 2) {
+                reasons += RiskReason.PHISHING_KEYWORDS
+            }
+        }
+
+        if (isUserContentHost(host, parsed.path)) reasons += RiskReason.USER_CONTENT_HOST
+        if (!isOfficialDomain(host) && brandInPath(parsed.path)) reasons += RiskReason.BRAND_IN_PATH
 
         val lastSegment = parsed.path.substringAfterLast('/').lowercase()
         val ext = lastSegment.substringAfterLast('.', "")
         if (ext in EXECUTABLE_EXTENSIONS) reasons += RiskReason.EXECUTABLE_DOWNLOAD
 
-        val decodedQuery = QrContentType.percentDecode(parsed.query).lowercase()
-        if (Regex("(^|&)[a-z_]*=(https?:|//)").containsMatchIn(decodedQuery)) reasons += RiskReason.EMBEDDED_REDIRECT
-
         if (url.length > 200) reasons += RiskReason.VERY_LONG
+
+        // Follow redirect parameters (google.com/url?q=…, l.facebook.com/l.php?u=…): what matters is where it ends.
+        val target = embeddedTarget(parsed.query)
+        if (target != null) {
+            reasons += RiskReason.EMBEDDED_REDIRECT
+            if (depth < 2) {
+                val inner = analyzeUrl(target, depth + 1)
+                if (inner.realDomain != null) {
+                    reasons += inner.reasons
+                    return UrlAnalysis(reasons, inner.realDomain, inner.host)
+                }
+            }
+        }
         return UrlAnalysis(reasons, domain, host)
+    }
+
+    private val REDIRECT_PARAMS = setOf(
+        "q", "u", "url", "uri", "link", "target", "dest", "destination", "redirect", "redirect_url",
+        "redirect_uri", "redirecturl", "next", "continue", "return", "returnurl", "return_to", "goto", "out", "to", "r"
+    )
+
+    /** First query parameter that carries a full http(s) URL, percent-decoded. */
+    private fun embeddedTarget(query: String): String? {
+        if (query.isEmpty()) return null
+        for (pair in query.split('&')) {
+            val eq = pair.indexOf('=')
+            if (eq <= 0) continue
+            val key = pair.substring(0, eq).lowercase()
+            var value = QrContentType.percentDecode(pair.substring(eq + 1).replace('+', ' ')).trim()
+            if (value.startsWith("//")) value = "https:$value"
+            if (key in REDIRECT_PARAMS && Regex("^https?://[^\\s/]+", RegexOption.IGNORE_CASE).containsMatchIn(value)) {
+                return value
+            }
+        }
+        return null
+    }
+
+    /** Platforms where anyone can publish a page or a form under the platform's own name. */
+    private fun isUserContentHost(host: String, path: String): Boolean {
+        if (SHARED_HOSTING.any { host == it || host.endsWith(".$it") }) return true
+        val p = path.lowercase()
+        return when {
+            host == "docs.google.com" -> p.startsWith("/forms") || p.startsWith("/presentation") || p.startsWith("/document")
+            host == "sites.google.com" || host == "forms.gle" -> true
+            host == "forms.office.com" || host == "forms.microsoft.com" -> true
+            host == "ipfs.io" || host.endsWith(".ipfs.dweb.link") || host.contains(".ipfs.") -> true
+            host == "storage.googleapis.com" || host.endsWith(".s3.amazonaws.com") || host == "s3.amazonaws.com" -> true
+            host.endsWith("typeform.com") || host.endsWith("jotform.com") || host.endsWith("jotform.me") -> true
+            else -> false
+        }
+    }
+
+    /** evil.com/paypal.com/login or evil.com/santander/verificar: the brand lives in the path, not the domain. */
+    private fun brandInPath(path: String): Boolean {
+        val p = QrContentType.percentDecode(path).lowercase()
+        if (p.length < 4) return false
+        val officialInPath = BRANDS.values.flatten().any { official -> Regex("(^|[/._-])${Regex.escape(official)}([/._-]|$)").containsMatchIn(p) }
+        if (officialInPath) return true
+        val segments = p.split('/', '.', '-', '_').filter { it.isNotEmpty() }
+        val brand = segments.any { s -> BRANDS.keys.any { it.length >= 4 && s == it } }
+        return brand && segments.any { it in PHISHING_KEYWORDS }
     }
 
     private fun analyzeOtherUri(content: QrContentType.OtherUri): Set<RiskReason> {
@@ -263,7 +334,7 @@ object QrRiskAnalyzer {
     }
 
     private fun findFirstLink(text: String): String? =
-        Regex("https?://[^\\s\"'<>]+", RegexOption.IGNORE_CASE).find(text)?.value
+        Regex("(https?://|www\\.)[^\\s\"'<>]+", RegexOption.IGNORE_CASE).find(text)?.value
 
     private fun isIpAddress(host: String): Boolean {
         if (host.startsWith("[")) return true
@@ -278,6 +349,10 @@ object QrRiskAnalyzer {
     private val SECOND_LEVEL = setOf("co", "com", "org", "net", "gob", "gov", "edu", "ac", "nom", "or", "ne", "go")
 
     fun registrableDomain(host: String): String {
+        // On shared hosting each site is its own "domain": caixabank-es.web.app, not web.app.
+        SHARED_HOSTING.firstOrNull { host.endsWith(".$it") }?.let { suffix ->
+            return host.removeSuffix(".$suffix").substringAfterLast('.') + "." + suffix
+        }
         val labels = host.trimEnd('.').split('.').filter { it.isNotEmpty() }
         if (labels.size <= 2) return labels.joinToString(".")
         val tld = labels.last()
@@ -345,6 +420,17 @@ object QrRiskAnalyzer {
     private val DANGEROUS_SCHEMES = setOf(
         "javascript", "vbscript", "data", "file", "content", "intent", "about", "blob",
         "android-app", "chrome", "ms-settings"
+    )
+
+    /** Free hosting where anyone gets a subdomain: the subdomain is the real owner. */
+    private val SHARED_HOSTING = listOf(
+        "web.app", "firebaseapp.com", "github.io", "gitlab.io", "pages.dev", "workers.dev", "netlify.app",
+        "vercel.app", "herokuapp.com", "glitch.me", "repl.co", "replit.app", "replit.dev", "blogspot.com",
+        "wixsite.com", "weebly.com", "webflow.io", "framer.website", "framer.app", "carrd.co", "godaddysites.com",
+        "square.site", "ngrok.io", "ngrok-free.app", "ngrok.app", "trycloudflare.com", "azurewebsites.net",
+        "appspot.com", "onrender.com", "fly.dev", "surge.sh", "000webhostapp.com", "wordpress.com", "r2.dev",
+        "notion.site", "mystrikingly.com", "jimdosite.com", "site123.me", "webnode.page", "tilda.ws",
+        "canva.site", "glide.page", "bubbleapps.io", "softr.app", "duckdns.org", "linodeobjects.com"
     )
 
     private val CRYPTO_SCHEMES = setOf(

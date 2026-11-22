@@ -63,4 +63,19 @@
     <string name="settings_done">Hecho</string>
     <string name="history_disabled">El historial está desactivado. Puedes activarlo en Privacidad.</string>
     <string name="settings_privacy_footer">El historial se guarda cifrado en este móvil y nunca se sube a ningún sitio. QR-Flow no tiene permiso de Internet.</string>
+    <string name="risk_reason_brand_in_path">Nombra una marca conocida o su web dentro de la ruta de la dirección, pero la web es de otra persona.</string>
+    <string name="risk_reason_user_content_host">Está alojada en un servicio gratuito o un formulario donde cualquiera puede publicar con el nombre de ese servicio.</string>
+    <string name="help_security_title">Avisos de códigos peligrosos</string>
+    <string name="help_security_desc">Tras cada lectura, un recuadro de color te dice si el código parece seguro (verde), si conviene tener cuidado (amarillo) o si parece malicioso (rojo), y te muestra la web a la que irías de verdad. Las acciones con riesgo te piden confirmación y las peligrosas se bloquean. Todo se comprueba en tu móvil, sin internet.</string>
+    <string name="help_incognito_title">Modo incógnito</string>
+    <string name="help_incognito_desc">Pulsa el botón del ojo arriba en la cámara. Mientras esté morado, las lecturas no se guardan, lo que copies se oculta y se borra al minuto, y se bloquean las capturas. Se apaga solo tras 30 minutos sin usar la app. También puedes abrirlo desde el icono de la app: mantenlo pulsado y elige Escanear en incógnito.</string>
+    <string name="help_zoom_title">Códigos pequeños, lejanos o borrosos</string>
+    <string name="help_zoom_desc">Toca la imagen para enfocar en ese punto. Usa el botón de zoom bajo el marco (1×, 2×, 4×) o pellizca con dos dedos para acercar.</string>
+    <string name="help_privacy_title">Tu privacidad</string>
+    <string name="help_privacy_desc">QR-Flow no tiene permiso de Internet. El historial se guarda cifrado en este móvil y nunca sale de él. En Historial, el botón del escudo te deja desactivarlo, borrarlo automáticamente y elegir si se guardan las contraseñas WiFi.</string>
+    <string name="incognito_auto_off">Modo incógnito desactivado tras 30 minutos sin usar la app</string>
+    <string name="history_unreadable">No se ha podido leer el historial anterior porque cambió la clave de cifrado del móvil. Se ha empezado uno nuevo.</string>
+    <string name="history_write_failed">No se ha podido guardar esta lectura en el historial cifrado.</string>
+    <string name="wifi_android10_hint">Red guardada. Si Android te pregunta en una notificación si permites las redes WiFi sugeridas, acepta y el móvil se conectará. También puedes tocar la red en el panel WiFi: la contraseña se ha copiado y se borra al minuto.</string>
+    <string name="help_understood">Entendido</string>
 </resources>

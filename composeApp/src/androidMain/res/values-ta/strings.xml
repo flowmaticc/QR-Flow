@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">ஆதரிக்கப்படும் வடிவங்கள்</string>
     <string name="help_supported_formats_desc">QR குறியீடுகள், EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec மற்றும் Data Matrix.</string>
     <string name="navigate_back">பின்செல்</string>
+    <string name="shortcut_scan_incognito">மறைநிலை ஸ்கேன்</string>
+    <string name="camera_gesture_hint">குவியத்துக்குத் தட்டுங்கள் · பெரிதாக்க விரல்களை விரியுங்கள்</string>
+    <string name="onboarding_step5_title">ஆபத்தான குறியீடுகளைப் பற்றி எச்சரிக்கிறது</string>
+    <string name="onboarding_step5_desc">எதையும் திறப்பதற்கு முன் QR-Flow உங்கள் ஃபோனில் குறியீட்டைச் சரிபார்த்து, அது செல்லும் உண்மையான இணையதளத்துடன் பச்சை, மஞ்சள் அல்லது சிவப்பு எச்சரிக்கையைக் காட்டும்.</string>
 </resources>

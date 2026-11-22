@@ -53,6 +53,7 @@ import qr_scanner.composeapp.generated.resources.history_forget_scan
 import qr_scanner.composeapp.generated.resources.incognito_on
 import qr_scanner.composeapp.generated.resources.open_failed
 import qr_scanner.composeapp.generated.resources.risk_blocked
+import qr_scanner.composeapp.generated.resources.wifi_android10_hint
 
 @Composable
 fun ScanResultOverlay(
@@ -235,7 +236,10 @@ private fun ResultActions(
                 ActionButton(stringResource(R.string.action_share), Icons.Default.Share) { share(contentType.displayText()) }
             }
             is QrContentType.Wifi -> {
-                val toastWifiSent = stringResource(R.string.toast_wifi_sent)
+                // Android 10 opens the Wi-Fi panel and copies the password: explain what happened.
+                val toastWifiSent = if (android.os.Build.VERSION.SDK_INT == android.os.Build.VERSION_CODES.Q)
+                    sharedStringResource(Res.string.wifi_android10_hint)
+                else stringResource(R.string.toast_wifi_sent)
                 ActionButton(stringResource(R.string.action_connect_wifi), Icons.Default.Wifi, danger = report) {
                     guard.run {
                         connectToWifi(p, contentType.ssid, contentType.password, contentType.authType, contentType.hidden)

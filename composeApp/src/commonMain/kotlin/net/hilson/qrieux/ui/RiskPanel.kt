@@ -67,6 +67,8 @@ fun reasonText(reason: RiskReason): StringResource = when (reason) {
     RiskReason.EXECUTABLE_DOWNLOAD -> Res.string.risk_reason_executable_download
     RiskReason.HIDDEN_CHARACTERS -> Res.string.risk_reason_hidden_characters
     RiskReason.ENCODED_HOST -> Res.string.risk_reason_encoded_host
+    RiskReason.BRAND_IN_PATH -> Res.string.risk_reason_brand_in_path
+    RiskReason.USER_CONTENT_HOST -> Res.string.risk_reason_user_content_host
     RiskReason.INSECURE_HTTP -> Res.string.risk_reason_insecure_http
     RiskReason.URL_SHORTENER -> Res.string.risk_reason_url_shortener
     RiskReason.SUSPICIOUS_TLD -> Res.string.risk_reason_suspicious_tld

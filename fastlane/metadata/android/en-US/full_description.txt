@@ -1,0 +1,21 @@
+QR-Flow is a QR and barcode scanner built so anyone, including our parents and grandparents, can scan codes without falling for scams. No ads, no accounts and no internet permission: nothing you scan leaves your phone.
+
+<b>It warns you before opening anything.</b> After every scan a green, yellow or red box tells you whether the code looks safe and shows the real website it leads to. Offline, it detects:
+<ul>
+<li>Sites imitating banks, government agencies and companies (PayPal, Amazon, Apple, Google, Spanish banks, post and tax offices…).</li>
+<li>Disguised links: misleading "@", look-alike letters (punycode), bare IP addresses, hidden redirects, URL shorteners and free hosting.</li>
+<li>App downloads (.apk) and links that run code.</li>
+<li>Codes that divert your calls (*21*…#), premium-rate numbers and SMS to paid short codes.</li>
+<li>Open or obsolete Wi-Fi networks.</li>
+</ul>
+Suspicious actions ask for confirmation and dangerous ones are blocked.
+
+<b>Incognito mode.</b> Scan a code without it being saved: anything you copy is hidden and erased after a minute, and screenshots are blocked. It turns itself off after 30 minutes without using the app.
+
+<b>Truly private.</b> History is encrypted on your phone, can be turned off or deleted automatically, and never keeps the Wi-Fi passwords you scan.
+
+<b>Reads everything:</b> links, Wi-Fi, contacts (vCard and MECARD), phone numbers, SMS, email, locations, calendar events, app links and product barcodes. Also from gallery photos or shared images. Tap to focus and zoom for small or distant codes.
+
+<b>Create QR codes</b> for a website, email, phone number, your Wi-Fi or any text.
+
+QR-Flow is free software (MIT licence), based on QRieux by Emmanuel Hilson.

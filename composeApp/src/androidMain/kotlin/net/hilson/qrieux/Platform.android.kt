@@ -130,7 +130,8 @@ internal fun copyToClipboardInternal(ctx: Context, text: String, label: String, 
 
 actual fun showToast(context: PlatformContext, message: String) {
     val ctx = (context as AndroidContext).context
-    Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
+    // Long explanations need the long duration to be readable.
+    Toast.makeText(ctx, message, if (message.length > 60) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
 }
 
 actual fun dismissPlatformInput(context: PlatformContext) {
@@ -154,9 +155,18 @@ actual fun connectToWifi(context: PlatformContext, ssid: String, password: Strin
             } catch (_: Exception) {}
             onResult(true)
         } else {
+            // Android 10 only "suggests" the network and joins it whenever it decides, which looks like
+            // nothing happened. Also copy the password (sensitive, self-clearing) and open the Wi-Fi panel
+            // so the user can join right away.
             val wifiManager = ctx.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
             wifiManager.removeNetworkSuggestions(listOf(suggestion))
             val status = wifiManager.addNetworkSuggestions(listOf(suggestion))
+            if (password.isNotEmpty()) copyToClipboardInternal(ctx, password, "Wi-Fi", sensitive = true)
+            try {
+                ctx.startActivity(Intent(Settings.Panel.ACTION_WIFI))
+            } catch (_: Exception) {
+                try { ctx.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) } catch (_: Exception) {}
+            }
             onResult(status == android.net.wifi.WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS)
         }
     } else {
@@ -241,14 +251,48 @@ actual fun loadHistoryJson(context: PlatformContext): String {
         saveHistoryJson(context, stored)
         return stored
     }
-    return HistoryCipher.decrypt(stored) ?: ""
+    return when (val read = HistoryCipher.decrypt(stored)) {
+        is HistoryCipher.Read.Ok -> {
+            HistoryCipher.writeBlocked = false
+            read.text
+        }
+        HistoryCipher.Read.KeyLost -> {
+            // The Keystore key is gone (some OS updates and restores wipe it): this history can never be
+            // read again. Say so once, and let the next save start a new one with a new key.
+            ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
+                .putBoolean("qf_history_unreadable", true)
+                .remove("history")
+                .apply()
+            HistoryCipher.resetKey()
+            ""
+        }
+        HistoryCipher.Read.Error -> {
+            // Probably temporary: keep the stored data untouched and refuse to overwrite it.
+            HistoryCipher.writeBlocked = true
+            ""
+        }
+    }
 }
 
 actual fun saveHistoryJson(context: PlatformContext, json: String) {
     val ctx = (context as AndroidContext).context
-    val value = if (json.isEmpty() || json == "[]") json else HistoryCipher.encrypt(json) ?: return
-    ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        .edit().putString("history", value).apply()
+    val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    if (HistoryCipher.writeBlocked && json != "[]") {
+        prefs.edit().putBoolean("qf_history_write_failed", true).apply()
+        return
+    }
+    if (json.isEmpty() || json == "[]") {
+        prefs.edit().putString("history", json).apply()
+        return
+    }
+    // A broken key is replaced once; the whole history is re-encrypted with the new one.
+    val value = HistoryCipher.encrypt(json) ?: run { HistoryCipher.resetKey(); HistoryCipher.encrypt(json) }
+    if (value == null) {
+        // Never fall back to plain text: report it instead.
+        prefs.edit().putBoolean("qf_history_write_failed", true).apply()
+        return
+    }
+    prefs.edit().putString("history", value).apply()
 }
 
 internal fun isIncognito(ctx: Context): Boolean =

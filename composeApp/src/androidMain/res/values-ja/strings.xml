@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">対応フォーマット</string>
     <string name="help_supported_formats_desc">QRコード、EAN-8、EAN-13、Code 128、Code 39、Code 93、UPC-E、PDF417、Aztec、Data Matrix。</string>
     <string name="navigate_back">戻る</string>
+    <string name="shortcut_scan_incognito">シークレットスキャン</string>
+    <string name="camera_gesture_hint">タップでピント合わせ・2本指でズーム</string>
+    <string name="onboarding_step5_title">危険なコードを警告します</string>
+    <string name="onboarding_step5_desc">何かを開く前に、QR-Flowがこの端末でコードを確認し、行き先の本当のサイトとともに緑・黄・赤の警告を表示します。</string>
 </resources>

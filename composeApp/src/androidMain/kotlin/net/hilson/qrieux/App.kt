@@ -98,6 +98,41 @@ fun App(
         LaunchedEffect(appMode) { incognito = PrivacySettings.incognito(platformContext) }
         LaunchedEffect(incognito) { setScreenSecure(platformContext, incognito) }
 
+        // Incognito expires after 30 minutes away from the app, so it is never left on by mistake.
+        val incognitoExpiredMessage = sharedStringResource(Res.string.incognito_auto_off)
+        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                when (event) {
+                    androidx.lifecycle.Lifecycle.Event.ON_START -> {
+                        if (PrivacySettings.expireIncognitoIfIdle(platformContext)) {
+                            scope.launch { snackbarHostState.showSnackbar(incognitoExpiredMessage) }
+                        }
+                        incognito = PrivacySettings.incognito(platformContext)
+                        PrivacySettings.markAppSeen(platformContext)
+                    }
+                    androidx.lifecycle.Lifecycle.Event.ON_STOP -> PrivacySettings.markAppSeen(platformContext)
+                    else -> {}
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
+
+        // Back goes one step back inside the app instead of closing it.
+        androidx.activity.compose.BackHandler(
+            enabled = !showOnboarding &&
+                ((appMode == AppMode.Scan && scannedContent != null) ||
+                    (appMode == AppMode.History && historyDetailEntry != null) ||
+                    appMode != AppMode.Scan)
+        ) {
+            when {
+                appMode == AppMode.Scan && scannedContent != null -> { scannedContent = null; lastScanId = null }
+                appMode == AppMode.History && historyDetailEntry != null -> historyDetailEntry = null
+                else -> { appMode = AppMode.Scan; pendingEditEntry = null }
+            }
+        }
+
         fun onScanned(raw: String) {
             scannedContent = QrContentType.fromRawValue(raw)
             lastScanId = recordHistory(platformContext, HistoryEntryType.SCAN, raw)

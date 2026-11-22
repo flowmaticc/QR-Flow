@@ -60,14 +60,19 @@ private data class HelpItem(
 
 private val helpItems = listOf(
     HelpItem(Res.string.onboarding_step1_title, Res.string.onboarding_step1_desc, Res.drawable.onboarding_qr_codes),
+    // QR-Flow: what keeps the user safe comes right after "what is a QR code".
+    HelpItem(Res.string.help_security_title, Res.string.help_security_desc, Res.drawable.help_security),
+    HelpItem(Res.string.help_incognito_title, Res.string.help_incognito_desc, Res.drawable.help_incognito),
     HelpItem(Res.string.onboarding_step2_title, Res.string.onboarding_step2_desc, Res.drawable.onboarding_scan),
     HelpItem(Res.string.help_flash_title, Res.string.help_flash_desc, Res.drawable.onboarding_flash),
+    HelpItem(Res.string.help_zoom_title, Res.string.help_zoom_desc, Res.drawable.help_zoom),
     HelpItem(Res.string.onboarding_step3_title, Res.string.onboarding_step3_desc, Res.drawable.onboarding_gallery),
     HelpItem(Res.string.help_share_to_scan_title, Res.string.help_share_to_scan_desc, Res.drawable.onboarding_share_scan),
     HelpItem(Res.string.help_wifi_contact_title, Res.string.help_wifi_contact_desc, Res.drawable.onboarding_wifi_contact),
     HelpItem(Res.string.onboarding_step4_title, Res.string.onboarding_step4_desc, Res.drawable.onboarding_create_qr),
     HelpItem(Res.string.help_share_to_create_title, Res.string.help_share_to_create_desc, Res.drawable.onboarding_share_create),
     HelpItem(Res.string.help_history_title, Res.string.help_history_desc, Res.drawable.onboarding_history),
+    HelpItem(Res.string.help_privacy_title, Res.string.help_privacy_desc, Res.drawable.help_privacy),
     HelpItem(Res.string.help_supported_formats_title, Res.string.help_supported_formats_desc, Res.drawable.onboarding_formats),
 )
 

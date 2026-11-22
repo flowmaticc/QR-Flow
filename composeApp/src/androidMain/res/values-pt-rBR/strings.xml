@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">Formatos suportados</string>
     <string name="help_supported_formats_desc">Códigos QR, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec e Data Matrix.</string>
     <string name="navigate_back">Voltar</string>
+    <string name="shortcut_scan_incognito">Escanear anônimo</string>
+    <string name="camera_gesture_hint">Toque na imagem para focar · afaste dois dedos para zoom</string>
+    <string name="onboarding_step5_title">Avisa sobre códigos perigosos</string>
+    <string name="onboarding_step5_desc">Antes de abrir qualquer coisa, o QR-Flow verifica o código no seu celular e mostra um aviso verde, amarelo ou vermelho com o site real para onde ele leva.</string>
 </resources>

@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">지원 형식</string>
     <string name="help_supported_formats_desc">QR 코드, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec, Data Matrix.</string>
     <string name="navigate_back">뒤로</string>
+    <string name="shortcut_scan_incognito">시크릿 스캔</string>
+    <string name="camera_gesture_hint">탭하여 초점 · 두 손가락으로 확대</string>
+    <string name="onboarding_step5_title">위험한 코드를 알려 드려요</string>
+    <string name="onboarding_step5_desc">무언가를 열기 전에 QR-Flow가 휴대폰에서 코드를 확인하고, 실제로 연결되는 사이트와 함께 초록, 노랑, 빨강 경고를 보여 줍니다.</string>
 </resources>

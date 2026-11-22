@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">Định dạng được hỗ trợ</string>
     <string name="help_supported_formats_desc">Mã QR, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec và Data Matrix.</string>
     <string name="navigate_back">Quay lại</string>
+    <string name="shortcut_scan_incognito">Quét ẩn danh</string>
+    <string name="camera_gesture_hint">Chạm để lấy nét · banh hai ngón để phóng to</string>
+    <string name="onboarding_step5_title">Cảnh báo bạn về mã nguy hiểm</string>
+    <string name="onboarding_step5_desc">Trước khi mở bất cứ thứ gì, QR-Flow kiểm tra mã trên điện thoại của bạn và hiện cảnh báo xanh, vàng hoặc đỏ cùng trang web thật mà mã dẫn đến.</string>
 </resources>

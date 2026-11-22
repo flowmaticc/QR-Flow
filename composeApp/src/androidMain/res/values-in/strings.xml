@@ -58,4 +58,8 @@
     <string name="help_supported_formats_title">Format yang Didukung</string>
     <string name="help_supported_formats_desc">Kode QR, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec, dan Data Matrix.</string>
     <string name="navigate_back">Kembali</string>
+    <string name="shortcut_scan_incognito">Pindai samaran</string>
+    <string name="camera_gesture_hint">Ketuk gambar untuk memfokus · renggangkan jari untuk zoom</string>
+    <string name="onboarding_step5_title">Memperingatkan kode berbahaya</string>
+    <string name="onboarding_step5_desc">Sebelum membuka apa pun, QR-Flow memeriksa kode di ponsel Anda dan menampilkan peringatan hijau, kuning, atau merah beserta situs web asli tujuannya.</string>
 </resources>

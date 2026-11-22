@@ -60,6 +60,11 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import qr_scanner.composeapp.generated.resources.history_disabled
+import qr_scanner.composeapp.generated.resources.history_unreadable
+import qr_scanner.composeapp.generated.resources.history_write_failed
+import qr_scanner.composeapp.generated.resources.help_understood
+import net.hilson.qrieux.getBoolSetting
+import net.hilson.qrieux.setBoolSetting
 import qr_scanner.composeapp.generated.resources.history_settings
 import net.hilson.qrieux.ui.theme.QRieuxUiConfig
 import org.jetbrains.compose.resources.stringResource
@@ -93,6 +98,32 @@ fun HistoryScreen(
     var historyEnabled by remember(refreshKey) { mutableStateOf(PrivacySettings.historyEnabled(platformContext)) }
 
     fun refresh() { refreshKey++ }
+
+    // Read after loadHistory() above, which is what raises these flags.
+    var unreadable by remember(refreshKey) { mutableStateOf(getBoolSetting(platformContext, PrivacySettings.HISTORY_UNREADABLE, false)) }
+    var writeFailed by remember(refreshKey) { mutableStateOf(getBoolSetting(platformContext, PrivacySettings.HISTORY_WRITE_FAILED, false)) }
+    if (unreadable || writeFailed) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(Res.string.history_title)) },
+            text = {
+                Text(
+                    stringResource(if (unreadable) Res.string.history_unreadable else Res.string.history_write_failed)
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        setBoolSetting(platformContext, PrivacySettings.HISTORY_UNREADABLE, false)
+                        setBoolSetting(platformContext, PrivacySettings.HISTORY_WRITE_FAILED, false)
+                        unreadable = false
+                        writeFailed = false
+                    },
+                    modifier = Modifier.semantics { testTag = "history_notice_ok" }
+                ) { Text(stringResource(Res.string.help_understood)) }
+            }
+        )
+    }
 
     if (showPrivacyDialog) {
         PrivacySettingsDialog(platformContext) {
