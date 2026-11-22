@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Sube a GitHub los secretos de firma de QR-Flow, usando la misma clave que Garbillo.
 
@@ -6,7 +6,7 @@
   Lee keystore.properties y el .jks de la carpeta de la clave (por defecto G:\garbillo-clave-firma,
   y si no existe, ~\.bloqueador-keys) y crea en el repositorio flowmaticc/QR-Flow:
     secretos  RELEASE_KEYSTORE_BASE64, RELEASE_KEYSTORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD
-    variable  CERT_SHA256 (huella del certificado, que no es secreta)
+    variable  CERT_SHA256 (huella del certificado, copiada de Garbillo; no es secreta)
   Los valores se pasan a "gh secret set" por la entrada estándar: no aparecen en pantalla, ni en la
   línea de comandos ni en el historial. Necesita estar conectado con "gh auth login".
 
@@ -19,6 +19,8 @@ param(
     [string]$Repo = "flowmaticc/QR-Flow"
 )
 $ErrorActionPreference = "Stop"
+# Windows PowerShell 5.1 envía texto a otros programas en ASCII: sin esto, una contraseña con tildes o ñ llegaría mal.
+$OutputEncoding = New-Object System.Text.UTF8Encoding $false
 
 if (-not $CarpetaClave) {
     $candidatas = @("G:\garbillo-clave-firma", (Join-Path $HOME ".bloqueador-keys"))
@@ -37,23 +39,18 @@ foreach ($k in "storePassword", "keyAlias", "keyPassword") {
     if (-not $props[$k]) { throw "Falta '$k' en $propsFile" }
 }
 
-# El .jks: el que indique storeFile si existe; si no, el que esté en la misma carpeta.
-$jks = $props["storeFile"]
-if (-not $jks -or -not (Test-Path -LiteralPath $jks)) {
-    $jks = Get-ChildItem -LiteralPath $CarpetaClave -Filter *.jks | Select-Object -First 1 -ExpandProperty FullName
-}
+# El .jks: el que esté junto a keystore.properties; si no hay, el que indique storeFile.
+$jks = Get-ChildItem -LiteralPath $CarpetaClave -Filter *.jks | Select-Object -First 1 -ExpandProperty FullName
+if (-not $jks -and $props["storeFile"] -and (Test-Path -LiteralPath $props["storeFile"])) { $jks = $props["storeFile"] }
 if (-not $jks) { throw "No encuentro el archivo .jks en $CarpetaClave" }
 Write-Host "Almacén: $jks"
 
-# Huella SHA-256 del certificado (pública), para que el workflow compruebe la firma.
-$keytool = Get-Command keytool -ErrorAction SilentlyContinue
-if (-not $keytool) { $keytool = Join-Path $env:LOCALAPPDATA "Android\tools\jdk-17\bin\keytool.exe" } else { $keytool = $keytool.Source }
-$env:QRFLOW_STOREPASS = $props["storePassword"]
-$certInfo = & $keytool -list -v -keystore $jks -alias $props["keyAlias"] -storepass:env QRFLOW_STOREPASS 2>$null
-Remove-Item Env:\QRFLOW_STOREPASS
-$sha = ($certInfo | Select-String 'SHA256:\s*([0-9A-F:]+)').Matches | Select-Object -First 1
-if (-not $sha) { throw "No he podido leer el certificado (¿contraseña o alias incorrectos?)" }
-$certSha = ($sha.Groups[1].Value -replace ':', '').ToLower()
+# Huella SHA-256 del certificado (pública): es la misma clave que Garbillo, así que se copia de su
+# variable CERT_SHA256. El workflow de QR-Flow la usa para comprobar la firma antes de publicar.
+$certSha = (gh variable get CERT_SHA256 --repo flowmaticc/bloqueador-android).Trim()
+if ($LASTEXITCODE -ne 0 -or $certSha -notmatch '^[0-9a-f]{64}$') {
+    throw "No he podido leer CERT_SHA256 de flowmaticc/bloqueador-android (¿gh auth login?)"
+}
 
 function Set-Secret([string]$name, [string]$value) {
     $value | gh secret set $name --repo $Repo
