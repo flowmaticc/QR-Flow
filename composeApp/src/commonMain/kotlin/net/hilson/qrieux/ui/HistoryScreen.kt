@@ -55,6 +55,12 @@ import net.hilson.qrieux.history.clearHistory
 import net.hilson.qrieux.history.deleteHistoryEntry
 import net.hilson.qrieux.history.displayLabel
 import net.hilson.qrieux.history.loadHistory
+import net.hilson.qrieux.history.PrivacySettings
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import qr_scanner.composeapp.generated.resources.history_disabled
+import qr_scanner.composeapp.generated.resources.history_settings
 import net.hilson.qrieux.ui.theme.QRieuxUiConfig
 import org.jetbrains.compose.resources.stringResource
 import qr_scanner.composeapp.generated.resources.Res
@@ -83,8 +89,17 @@ fun HistoryScreen(
     var refreshKey by remember { mutableStateOf(0) }
     var entries by remember(refreshKey) { mutableStateOf(loadHistory(platformContext)) }
     var showClearDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
+    var historyEnabled by remember(refreshKey) { mutableStateOf(PrivacySettings.historyEnabled(platformContext)) }
 
     fun refresh() { refreshKey++ }
+
+    if (showPrivacyDialog) {
+        PrivacySettingsDialog(platformContext) {
+            showPrivacyDialog = false
+            refresh() // retention may have pruned entries
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -92,6 +107,15 @@ fun HistoryScreen(
             TopAppBar(
                 title = { Text(stringResource(Res.string.history_title)) },
                 actions = {
+                    IconButton(
+                        onClick = { showPrivacyDialog = true },
+                        modifier = Modifier.semantics { testTag = "history_privacy" }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Shield,
+                            contentDescription = stringResource(Res.string.history_settings)
+                        )
+                    }
                     if (entries.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }) {
                             Icon(
@@ -104,7 +128,14 @@ fun HistoryScreen(
             )
         }
     ) { paddingValues ->
-        if (entries.isEmpty()) {
+        if (entries.isEmpty() && !historyEnabled) {
+            Text(
+                text = stringResource(Res.string.history_disabled),
+                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(48.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else if (entries.isEmpty()) {
             EmptyState(modifier = Modifier.fillMaxSize().padding(paddingValues))
         } else {
             LazyColumn(

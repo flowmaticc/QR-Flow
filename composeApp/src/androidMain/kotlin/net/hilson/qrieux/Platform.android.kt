@@ -93,10 +93,39 @@ actual fun shareImage(context: PlatformContext, pngData: ByteArray, title: Strin
     } catch (_: Exception) {}
 }
 
-actual fun copyToClipboard(context: PlatformContext, text: String, label: String) {
+actual fun copyToClipboard(context: PlatformContext, text: String, label: String, sensitive: Boolean) {
     val ctx = (context as AndroidContext).context
+    copyToClipboardInternal(ctx, text, label, sensitive || isIncognito(ctx))
+}
+
+private const val CLIPBOARD_CLEAR_DELAY_MS = 60_000L
+
+internal fun copyToClipboardInternal(ctx: Context, text: String, label: String, sensitive: Boolean) {
     val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+    val clip = ClipData.newPlainText(label, text)
+    if (sensitive) {
+        // Android 13+ hides sensitive clips from the copy preview and keyboard suggestions.
+        clip.description.extras = android.os.PersistableBundle().apply {
+            putBoolean("android.content.extra.IS_SENSITIVE", true)
+        }
+    }
+    clipboard.setPrimaryClip(clip)
+    if (!sensitive) return
+
+    // Clear it after a minute unless something else has been copied in the meantime.
+    val main = android.os.Handler(android.os.Looper.getMainLooper())
+    var replaced = false
+    val listener = ClipboardManager.OnPrimaryClipChangedListener { replaced = true }
+    main.post { clipboard.addPrimaryClipChangedListener(listener) }
+    main.postDelayed({
+        clipboard.removePrimaryClipChangedListener(listener)
+        if (!replaced) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) clipboard.clearPrimaryClip()
+                else clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
+            } catch (_: Exception) {}
+        }
+    }, CLIPBOARD_CLEAR_DELAY_MS)
 }
 
 actual fun showToast(context: PlatformContext, message: String) {
@@ -114,8 +143,8 @@ actual fun dismissPlatformInput(context: PlatformContext) {
 
 actual fun connectToWifi(context: PlatformContext, ssid: String, password: String, authType: String, hidden: Boolean, onResult: (Boolean) -> Unit) {
     val ctx = (context as AndroidContext).context
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        val suggestion = buildWifiSuggestion(ssid, password, authType, hidden)
+    val suggestion = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) buildWifiSuggestion(ssid, password, authType, hidden) else null
+    if (suggestion != null) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val bundle = Bundle().apply {
                 putParcelableArrayList(Settings.EXTRA_WIFI_NETWORK_LIST, arrayListOf(suggestion))
@@ -131,8 +160,9 @@ actual fun connectToWifi(context: PlatformContext, ssid: String, password: Strin
             onResult(status == android.net.wifi.WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS)
         }
     } else {
-        val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("WiFi Password", password))
+        // Android 9 and older, or a network type suggestions cannot describe (WEP, enterprise):
+        // copy the password as a sensitive clip that clears itself, then open Wi-Fi settings.
+        if (password.isNotEmpty()) copyToClipboardInternal(ctx, password, "Wi-Fi", sensitive = true)
         try {
             ctx.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS))
         } catch (_: Exception) {}
@@ -141,20 +171,31 @@ actual fun connectToWifi(context: PlatformContext, ssid: String, password: Strin
 }
 
 @androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
-private fun buildWifiSuggestion(ssid: String, password: String, authType: String, hidden: Boolean): WifiNetworkSuggestion {
+private fun buildWifiSuggestion(ssid: String, password: String, authType: String, hidden: Boolean): WifiNetworkSuggestion? {
+    // Returns null for networks a suggestion cannot express (WEP, WPA-EAP): the caller falls back to settings.
     val builder = WifiNetworkSuggestion.Builder()
         .setSsid(ssid)
         .setIsHiddenSsid(hidden)
-    when (authType) {
-        "WPA", "WPA2", "WPA3" -> builder.setWpa2Passphrase(password)
-        "WEP" -> builder.setWpa2Passphrase(password)
+    val type = authType.uppercase()
+    return try {
+        when {
+            type == "WPA3" || type == "SAE" -> builder.setWpa3Passphrase(password)
+            type == "WPA" || type == "WPA2" || type == "WPA/WPA2" -> builder.setWpa2Passphrase(password)
+            type == "WEP" || type.contains("EAP") -> return null
+            // Many generators omit T: when there is a password it is almost always WPA2.
+            password.isNotEmpty() -> builder.setWpa2Passphrase(password)
+            else -> {} // open network
+        }
+        builder.build()
+    } catch (_: IllegalArgumentException) {
+        null // e.g. a passphrase outside the 8..63 range
     }
-    return builder.build()
 }
 
 actual fun addContact(context: PlatformContext, vCardData: String) {
     val ctx = (context as AndroidContext).context
-    val file = File(ctx.cacheDir, "contact.vcf")
+    val dir = File(ctx.cacheDir, "shared_qr").apply { mkdirs() }
+    val file = File(dir, "contact.vcf")
     file.writeText(vCardData)
     val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
     val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -162,7 +203,7 @@ actual fun addContact(context: PlatformContext, vCardData: String) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
-    ctx.startActivity(intent)
+    try { ctx.startActivity(intent) } catch (_: Exception) {}
 }
 
 actual fun openAppSettings(context: PlatformContext) {
@@ -193,14 +234,38 @@ actual fun currentTimeMillis(): Long = System.currentTimeMillis()
 
 actual fun loadHistoryJson(context: PlatformContext): String {
     val ctx = (context as AndroidContext).context
-    return ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        .getString("history", "") ?: ""
+    val stored = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString("history", "") ?: ""
+    if (stored.isEmpty()) return ""
+    if (!stored.startsWith(HistoryCipher.PREFIX)) {
+        // Plain-text history from QRieux: encrypt it in place.
+        saveHistoryJson(context, stored)
+        return stored
+    }
+    return HistoryCipher.decrypt(stored) ?: ""
 }
 
 actual fun saveHistoryJson(context: PlatformContext, json: String) {
     val ctx = (context as AndroidContext).context
+    val value = if (json.isEmpty() || json == "[]") json else HistoryCipher.encrypt(json) ?: return
     ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        .edit().putString("history", json).apply()
+        .edit().putString("history", value).apply()
+}
+
+internal fun isIncognito(ctx: Context): Boolean =
+    ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean("qf_incognito", false)
+
+actual fun getBoolSetting(context: PlatformContext, key: String, default: Boolean): Boolean =
+    (context as AndroidContext).context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean("qf_$key", default)
+
+actual fun setBoolSetting(context: PlatformContext, key: String, value: Boolean) {
+    (context as AndroidContext).context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean("qf_$key", value).apply()
+}
+
+actual fun getIntSetting(context: PlatformContext, key: String, default: Int): Int =
+    (context as AndroidContext).context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt("qf_$key", default)
+
+actual fun setIntSetting(context: PlatformContext, key: String, value: Int) {
+    (context as AndroidContext).context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putInt("qf_$key", value).apply()
 }
 
 actual fun generateQrCode(content: String, size: Int): GeneratedQrCode? {

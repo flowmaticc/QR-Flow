@@ -90,8 +90,20 @@ private fun getRootViewController(): UIViewController? {
         ?.let { (it as? UIWindow)?.rootViewController }
 }
 
-actual fun copyToClipboard(context: PlatformContext, text: String, label: String) {
-    UIPasteboard.generalPasteboard.string = text
+actual fun copyToClipboard(context: PlatformContext, text: String, label: String, sensitive: Boolean) {
+    val secret = sensitive || getBoolSetting(context, "incognito", false)
+    if (secret) {
+        // Local-only (no Universal Clipboard) and expires after 60 s.
+        UIPasteboard.generalPasteboard.setItems(
+            listOf(mapOf("public.utf8-plain-text" to text)),
+            options = mapOf(
+                "UIPasteboardOptionLocalOnly" to true,
+                "UIPasteboardOptionExpirationDate" to NSDate().dateByAddingTimeInterval(60.0)
+            )
+        )
+    } else {
+        UIPasteboard.generalPasteboard.string = text
+    }
 }
 
 actual fun showToast(context: PlatformContext, message: String) {
@@ -205,4 +217,51 @@ private fun NSData.toByteArray(): ByteArray {
         memcpy(pinned.addressOf(0), this.bytes, length)
     }
     return bytes
+}
+
+// --- QR-Flow additions ---
+
+private fun openIosUrl(url: String): Boolean {
+    val nsUrl = NSURL.URLWithString(url) ?: return false
+    UIApplication.sharedApplication.openURL(nsUrl, emptyMap<Any?, Any>()) { _ -> }
+    return true
+}
+
+actual fun sendSms(context: PlatformContext, number: String, body: String) {
+    val encoded = (body as NSString).stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet) ?: ""
+    openIosUrl(if (body.isEmpty()) "sms:$number" else "sms:$number&body=$encoded")
+}
+
+actual fun openMap(context: PlatformContext, latitude: Double, longitude: Double, query: String) {
+    openIosUrl("https://maps.apple.com/?ll=$latitude,$longitude")
+}
+
+actual fun addCalendarEvent(context: PlatformContext, summary: String, start: String, end: String, location: String, description: String) {
+    // EventKit UI is not wired on iOS yet: copy the details so the user can paste them into Calendar.
+    UIPasteboard.generalPasteboard.string = listOf(summary, start, end, location, description).filter { it.isNotEmpty() }.joinToString("
+")
+}
+
+actual fun openOtherUri(context: PlatformContext, uri: String): Boolean = openIosUrl(uri)
+
+actual fun getBoolSetting(context: PlatformContext, key: String, default: Boolean): Boolean {
+    val defaults = NSUserDefaults.standardUserDefaults
+    return if (defaults.objectForKey("qf_$key") == null) default else defaults.boolForKey("qf_$key")
+}
+
+actual fun setBoolSetting(context: PlatformContext, key: String, value: Boolean) {
+    NSUserDefaults.standardUserDefaults.setBool(value, forKey = "qf_$key")
+}
+
+actual fun getIntSetting(context: PlatformContext, key: String, default: Int): Int {
+    val defaults = NSUserDefaults.standardUserDefaults
+    return if (defaults.objectForKey("qf_$key") == null) default else defaults.integerForKey("qf_$key").toInt()
+}
+
+actual fun setIntSetting(context: PlatformContext, key: String, value: Int) {
+    NSUserDefaults.standardUserDefaults.setInteger(value.toLong(), forKey = "qf_$key")
+}
+
+actual fun setScreenSecure(context: PlatformContext, secure: Boolean) {
+    // iOS offers no public FLAG_SECURE equivalent; nothing to do.
 }

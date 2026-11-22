@@ -100,7 +100,7 @@ fun ScanScreen(sharedImage: UIImage? = null) {
                 if (result != null) {
                     vibrate(IosContext())
                     scannedContent = QrContentType.fromRawValue(result)
-                    addHistoryEntry(platformContext, HistoryEntry(generateUuid(), currentTimeMillis(), HistoryEntryType.SCAN, result))
+                    net.hilson.qrieux.history.recordHistory(platformContext, HistoryEntryType.SCAN, result)
                 } else {
                     snackbarHostState.showSnackbar(getString(Res.string.gallery_no_qr_found))
                 }
@@ -125,7 +125,7 @@ fun ScanScreen(sharedImage: UIImage? = null) {
                         CameraPreview(
                             onQrCodeDetected = { rawValue ->
                                 scannedContent = QrContentType.fromRawValue(rawValue)
-                                addHistoryEntry(platformContext, HistoryEntry(generateUuid(), currentTimeMillis(), HistoryEntryType.SCAN, rawValue))
+                                net.hilson.qrieux.history.recordHistory(platformContext, HistoryEntryType.SCAN, rawValue)
                             },
                             isScanning = scannedContent == null,
                             onGalleryClick = { showPhotoPicker = true },
@@ -173,7 +173,7 @@ fun ScanScreen(sharedImage: UIImage? = null) {
                             if (result != null) {
                                 vibrate(IosContext())
                                 scannedContent = QrContentType.fromRawValue(result)
-                                addHistoryEntry(platformContext, HistoryEntry(generateUuid(), currentTimeMillis(), HistoryEntryType.SCAN, result))
+                                net.hilson.qrieux.history.recordHistory(platformContext, HistoryEntryType.SCAN, result)
                             } else {
                                 snackbarHostState.showSnackbar(getString(Res.string.gallery_no_qr_found))
                             }

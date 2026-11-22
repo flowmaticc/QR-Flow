@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>QR de prueba</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#fff;color:#111;margin:0;padding:16px}
+.q{display:none;text-align:center}.q.on{display:block}
+img{width:min(70vh,90vw);image-rendering:pixelated}
+h1{font-size:22px;margin:8px 0}
+nav{text-align:center;margin:12px}button{font-size:18px;padding:8px 16px;margin:0 6px}
+</style></head><body>
+<div class="q on"><h1>1/4 · WiFi WPA (Casa / secreta123)</h1><img src="06_wifi_wpa.png"></div>
+<div class="q"><h1>2/4 · Evento de calendario</h1><img src="07_evento.png"></div>
+<div class="q"><h1>3/4 · Correos falso que descarga .apk</h1><img src="08_correos_apk.png"></div>
+<div class="q"><h1>4/4 · Ubicación (Puerta del Sol)</h1><img src="09_geo.png"></div>
+<nav><button onclick="go(-1)">◀ Anterior</button><button onclick="go(1)">Siguiente ▶</button></nav>
+<script>
+let i=0;const qs=document.querySelectorAll('.q');
+function go(d){qs[i].classList.remove('on');i=(i+d+qs.length)%qs.length;qs[i].classList.add('on')}
+</script></body></html>

@@ -54,7 +54,7 @@
     <string name="tab_help">Trợ giúp</string>
 
     <!--  Help Screen -->
-    <string name="help_screen_title">Cách sử dụng QRieux</string>
+    <string name="help_screen_title">Cách sử dụng QR-Flow</string>
     <string name="help_supported_formats_title">Định dạng được hỗ trợ</string>
     <string name="help_supported_formats_desc">Mã QR, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec và Data Matrix.</string>
     <string name="navigate_back">Quay lại</string>

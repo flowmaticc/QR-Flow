@@ -54,7 +54,7 @@
     <string name="tab_help">ヘルプ</string>
 
     <!--  Help Screen -->
-    <string name="help_screen_title">QRieuxの使い方</string>
+    <string name="help_screen_title">QR-Flowの使い方</string>
     <string name="help_supported_formats_title">対応フォーマット</string>
     <string name="help_supported_formats_desc">QRコード、EAN-8、EAN-13、Code 128、Code 39、Code 93、UPC-E、PDF417、Aztec、Data Matrix。</string>
     <string name="navigate_back">戻る</string>

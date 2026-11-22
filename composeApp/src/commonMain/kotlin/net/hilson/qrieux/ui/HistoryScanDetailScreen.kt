@@ -58,9 +58,24 @@ import net.hilson.qrieux.history.HistoryEntry
 import net.hilson.qrieux.openUrl
 import net.hilson.qrieux.sendEmail
 import net.hilson.qrieux.shareText
+import net.hilson.qrieux.sendSms
+import net.hilson.qrieux.openMap
+import net.hilson.qrieux.addCalendarEvent
+import net.hilson.qrieux.openOtherUri
+import net.hilson.qrieux.security.QrRiskAnalyzer
+import net.hilson.qrieux.security.RiskReason
 import net.hilson.qrieux.util.QrContentType
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Sms
 import org.jetbrains.compose.resources.stringResource
 import qr_scanner.composeapp.generated.resources.Res
+import qr_scanner.composeapp.generated.resources.action_add_event
+import qr_scanner.composeapp.generated.resources.action_open_app
+import qr_scanner.composeapp.generated.resources.action_open_map
+import qr_scanner.composeapp.generated.resources.action_send_sms
+import qr_scanner.composeapp.generated.resources.open_failed
 import qr_scanner.composeapp.generated.resources.action_call
 import qr_scanner.composeapp.generated.resources.action_add_contact
 import qr_scanner.composeapp.generated.resources.action_connect_wifi
@@ -89,22 +104,14 @@ fun HistoryScanDetailScreen(
     val copiedMsg = stringResource(Res.string.toast_copied)
     val clipLabel = stringResource(Res.string.clipboard_label_qr)
 
-    val rawDisplay = when (contentType) {
-        is QrContentType.Url -> contentType.url
-        is QrContentType.Email -> contentType.email
-        is QrContentType.Phone -> contentType.phone
-        is QrContentType.Wifi -> contentType.ssid
-        is QrContentType.Contact -> buildString {
-            append(contentType.fullName)
-            if (contentType.phone.isNotEmpty()) append("\n${contentType.phone}")
-            if (contentType.email.isNotEmpty()) append("\n${contentType.email}")
-            if (contentType.organization.isNotEmpty()) append("\n${contentType.organization}")
-        }
-        is QrContentType.Text -> contentType.text
-    }
+    val report = remember(contentType) { QrRiskAnalyzer.analyze(contentType) }
+    val guard = rememberRiskGuard(report)
+    val rawDisplay = QrRiskAnalyzer.revealHiddenCharacters(contentType.displayText())
+    val mmi = RiskReason.MMI_CODE in report.reasons
+    val openFailed = stringResource(Res.string.open_failed)
 
-    fun onCopy(text: String) {
-        copyToClipboard(platformContext, text, clipLabel)
+    fun onCopy(text: String, sensitive: Boolean = false) {
+        copyToClipboard(platformContext, text, clipLabel, sensitive)
         scope.launch { snackbarHostState.showSnackbar(copiedMsg) }
     }
 
@@ -147,7 +154,9 @@ fun HistoryScanDetailScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            RiskPanel(report)
+            Spacer(modifier = Modifier.height(24.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 when (contentType) {
@@ -156,7 +165,7 @@ fun HistoryScanDetailScreen(
                                 contentType.url.startsWith("https://", true)
                         if (safe) {
                             DetailActionButton(stringResource(Res.string.action_open_browser), Icons.Default.OpenInBrowser) {
-                                openUrl(platformContext, contentType.url)
+                                guard.run { openUrl(platformContext, contentType.url) }
                             }
                         }
                         DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
@@ -168,7 +177,7 @@ fun HistoryScanDetailScreen(
                     }
                     is QrContentType.Email -> {
                         DetailActionButton(stringResource(Res.string.action_send_email), Icons.AutoMirrored.Filled.Send) {
-                            sendEmail(platformContext, contentType.email)
+                            guard.run { sendEmail(platformContext, contentType.email) }
                         }
                         DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
                             onCopy(contentType.email)
@@ -178,8 +187,10 @@ fun HistoryScanDetailScreen(
                         }
                     }
                     is QrContentType.Phone -> {
-                        DetailActionButton(stringResource(Res.string.action_call), Icons.Default.Phone) {
-                            dialPhone(platformContext, contentType.phone)
+                        if (!mmi) {
+                            DetailActionButton(stringResource(Res.string.action_call), Icons.Default.Phone) {
+                                guard.run { dialPhone(platformContext, contentType.phone) }
+                            }
                         }
                         DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
                             onCopy(contentType.phone)
@@ -195,14 +206,16 @@ fun HistoryScanDetailScreen(
                             icon = Icons.Default.Wifi,
                             enabled = !connecting
                         ) {
-                            connecting = true
-                            connectToWifi(platformContext, contentType.ssid, contentType.password, contentType.authType, contentType.hidden) {
-                                connecting = false
+                            guard.run {
+                                connecting = true
+                                connectToWifi(platformContext, contentType.ssid, contentType.password, contentType.authType, contentType.hidden) {
+                                    connecting = false
+                                }
                             }
                         }
                         if (contentType.password.isNotEmpty()) {
                             DetailActionButton(stringResource(Res.string.wifi_copy_password), Icons.Default.ContentCopy) {
-                                onCopy(contentType.password)
+                                onCopy(contentType.password, sensitive = true)
                             }
                         }
                         DetailActionButton(stringResource(Res.string.action_share), Icons.Default.Share) {
@@ -211,11 +224,11 @@ fun HistoryScanDetailScreen(
                     }
                     is QrContentType.Contact -> {
                         DetailActionButton(stringResource(Res.string.action_add_contact), Icons.Default.PersonAdd) {
-                            addContact(platformContext, contentType.rawVCard)
+                            guard.run { addContact(platformContext, contentType.rawVCard) }
                         }
-                        if (contentType.phone.isNotEmpty()) {
+                        if (contentType.phone.isNotEmpty() && !mmi) {
                             DetailActionButton(stringResource(Res.string.action_call), Icons.Default.Phone) {
-                                dialPhone(platformContext, contentType.phone)
+                                guard.run { dialPhone(platformContext, contentType.phone) }
                             }
                         }
                         if (contentType.email.isNotEmpty()) {
@@ -225,6 +238,48 @@ fun HistoryScanDetailScreen(
                         }
                         DetailActionButton(stringResource(Res.string.action_share), Icons.Default.Share) {
                             shareText(platformContext, contentType.rawVCard, "")
+                        }
+                    }
+                    is QrContentType.Sms -> {
+                        if (!mmi) {
+                            DetailActionButton(stringResource(Res.string.action_send_sms), Icons.Default.Sms) {
+                                guard.run { sendSms(platformContext, contentType.number, contentType.body) }
+                            }
+                        }
+                        DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
+                            onCopy(contentType.displayText())
+                        }
+                    }
+                    is QrContentType.Geo -> {
+                        DetailActionButton(stringResource(Res.string.action_open_map), Icons.Default.Map) {
+                            openMap(platformContext, contentType.latitude, contentType.longitude, contentType.query)
+                        }
+                        DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
+                            onCopy("${contentType.latitude},${contentType.longitude}")
+                        }
+                    }
+                    is QrContentType.Event -> {
+                        DetailActionButton(stringResource(Res.string.action_add_event), Icons.Default.Event) {
+                            guard.run {
+                                addCalendarEvent(platformContext, contentType.summary, contentType.start, contentType.end, contentType.location, contentType.description)
+                            }
+                        }
+                        DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
+                            onCopy(contentType.displayText())
+                        }
+                    }
+                    is QrContentType.OtherUri -> {
+                        if (!QrRiskAnalyzer.isBlockedScheme(contentType.scheme)) {
+                            DetailActionButton(stringResource(Res.string.action_open_app), Icons.AutoMirrored.Filled.OpenInNew) {
+                                guard.run {
+                                    if (!openOtherUri(platformContext, contentType.uri)) {
+                                        scope.launch { snackbarHostState.showSnackbar(openFailed) }
+                                    }
+                                }
+                            }
+                        }
+                        DetailActionButton(stringResource(Res.string.action_copy), Icons.Default.ContentCopy) {
+                            onCopy(contentType.uri, sensitive = contentType.scheme.startsWith("otpauth"))
                         }
                     }
                     is QrContentType.Text -> {
@@ -245,6 +300,7 @@ fun HistoryScanDetailScreen(
             }
         }
     }
+    RiskGuardDialog(guard)
 }
 
 @Composable

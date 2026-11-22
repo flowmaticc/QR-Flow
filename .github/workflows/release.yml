@@ -1,0 +1,130 @@
+# Compila, prueba, firma y publica QR-Flow en GitHub Releases. Solo a mano:
+#   Actions → Publicar → Run workflow (opcionalmente, como pre-release).
+#
+# Secretos necesarios (Settings → Secrets and variables → Actions), los mismos nombres que en key.properties:
+#   KEYSTORE_BASE64      el .jks/.keystore en base64
+#   KEYSTORE_PASSWORD    contraseña del almacén
+#   KEY_ALIAS            alias de la clave
+#   KEY_PASSWORD         contraseña de la clave
+# Variable opcional CERT_SHA256: huella esperada del certificado; si está, se comprueba antes de publicar.
+# Conviene usar la misma clave que Garbillo para que la integración con permiso "signature" funcione.
+#
+# Seguridad: el job que firma no puede escribir en el repositorio; el que publica no ve la clave.
+
+name: Publicar
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Publicar como versión de prueba (pre-release)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Versión
+        id: version
+        run: |
+          name=$(grep -oP 'versionName = "\K[^"]+' composeApp/build.gradle.kts)
+          echo "tag=v$name" >> "$GITHUB_OUTPUT"
+          echo "Versión $name"
+
+      - name: Tests
+        run: ./gradlew --no-daemon :composeApp:testDebugUnitTest
+
+      - name: Preparar la clave de firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Faltan los secretos de firma (KEYSTORE_BASE64…). Ver la cabecera de este workflow."; exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          {
+            echo "storeFile=$RUNNER_TEMP/release.keystore"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > key.properties
+
+      - name: Compilar APK firmado
+        run: ./gradlew --no-daemon :composeApp:assembleRelease
+
+      - name: Comprobar firma y permisos
+        env:
+          CERT_SHA256: ${{ vars.CERT_SHA256 }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          bt=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          apk=composeApp/build/outputs/apk/release/composeApp-release.apk
+          certs=$("$bt/apksigner" verify --verbose --print-certs "$apk")
+          echo "$certs"
+          if [ -n "$CERT_SHA256" ]; then
+            want=$(tr -d ': ' <<< "$CERT_SHA256" | tr 'A-F' 'a-f')
+            grep -qi "SHA-256 digest: $want" <<< "$certs" || { echo "::error::El certificado no coincide"; exit 1; }
+          fi
+          if "$bt/aapt" dump permissions "$apk" | grep -q "android.permission.INTERNET"; then
+            echo "::error::El APK pide permiso de Internet"; exit 1
+          fi
+          mkdir -p out
+          cp "$apk" "out/qr-flow-${TAG#v}.apk"
+          (cd out && sha256sum *.apk > SHA256SUMS.txt)
+          rm -f key.properties "$RUNNER_TEMP/release.keystore"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: publicacion
+          path: out/
+          retention-days: 7
+
+  publicar:
+    needs: compilar
+    runs-on: ubuntu-latest
+    # Escribe en el repositorio, pero no tiene ningún secreto de firma.
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: publicacion
+          path: out
+
+      - name: Publicar en GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.compilar.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          flag=--latest
+          [ "$PRERELEASE" = "true" ] && flag=--prerelease
+          gh release create "$TAG" out/* --target "$GITHUB_SHA" $flag \
+            --title "QR-Flow $TAG" --generate-notes

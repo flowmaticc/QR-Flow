@@ -1,10 +1,71 @@
 package net.hilson.qrieux.history
 
 import net.hilson.qrieux.PlatformContext
+import net.hilson.qrieux.currentTimeMillis
+import net.hilson.qrieux.generateUuid
+import net.hilson.qrieux.getBoolSetting
+import net.hilson.qrieux.getIntSetting
 import net.hilson.qrieux.loadHistoryJson
 import net.hilson.qrieux.saveHistoryJson
+import net.hilson.qrieux.setBoolSetting
+import net.hilson.qrieux.setIntSetting
+import net.hilson.qrieux.util.QrContentType
 
 private const val MAX_ENTRIES = 200
+private const val DAY_MS = 24L * 60 * 60 * 1000
+
+/** Privacy switches; stored with the platform settings. */
+object PrivacySettings {
+    const val INCOGNITO = "incognito"
+    const val HISTORY_ENABLED = "history_enabled"
+    const val SAVE_WIFI_PASSWORDS = "history_wifi_passwords"
+    const val RETENTION_DAYS = "history_retention_days"
+    val RETENTION_OPTIONS = listOf(0, 1, 7, 30) // 0 = keep until deleted
+
+    fun incognito(c: PlatformContext) = getBoolSetting(c, INCOGNITO, false)
+    fun setIncognito(c: PlatformContext, v: Boolean) = setBoolSetting(c, INCOGNITO, v)
+    fun historyEnabled(c: PlatformContext) = getBoolSetting(c, HISTORY_ENABLED, true)
+    fun setHistoryEnabled(c: PlatformContext, v: Boolean) = setBoolSetting(c, HISTORY_ENABLED, v)
+    fun saveWifiPasswords(c: PlatformContext) = getBoolSetting(c, SAVE_WIFI_PASSWORDS, false)
+    fun setSaveWifiPasswords(c: PlatformContext, v: Boolean) = setBoolSetting(c, SAVE_WIFI_PASSWORDS, v)
+    fun retentionDays(c: PlatformContext) = getIntSetting(c, RETENTION_DAYS, 0)
+    fun setRetentionDays(c: PlatformContext, v: Int) = setIntSetting(c, RETENTION_DAYS, v)
+}
+
+/** Drops the Wi-Fi password from a WIFI: payload; anything else is returned unchanged. */
+fun redactForHistory(rawValue: String): String {
+    val parsed = QrContentType.fromRawValue(rawValue)
+    if (parsed !is QrContentType.Wifi || parsed.password.isEmpty()) return rawValue
+    return QrContentType.buildWifiPayload(parsed.ssid, "", parsed.authType, parsed.hidden)
+}
+
+/**
+ * Saves a scan or a generated code unless incognito mode or a privacy setting says otherwise.
+ * Returns the id of the stored entry, or null when nothing was written.
+ */
+fun recordHistory(
+    context: PlatformContext,
+    type: HistoryEntryType,
+    rawValue: String,
+    generatorType: String? = null
+): String? {
+    if (PrivacySettings.incognito(context) || !PrivacySettings.historyEnabled(context)) return null
+    val value = if (PrivacySettings.saveWifiPasswords(context)) rawValue else redactForHistory(rawValue)
+    val now = currentTimeMillis()
+    // Pointing at the same code and tapping "Scan again" reads it again: keep a single entry.
+    findRecentDuplicate(loadHistory(context), type, value, now)?.let { return it.id }
+    val entry = HistoryEntry(generateUuid(), now, type, value, generatorType)
+    addHistoryEntry(context, entry)
+    return entry.id
+}
+
+const val DUPLICATE_WINDOW_MS = 2 * 60_000L
+
+/** The newest entry, if it holds the same content and was saved less than [DUPLICATE_WINDOW_MS] ago. */
+fun findRecentDuplicate(entries: List<HistoryEntry>, type: HistoryEntryType, rawValue: String, now: Long): HistoryEntry? {
+    val latest = entries.firstOrNull() ?: return null
+    return latest.takeIf { it.type == type && it.rawValue == rawValue && now - it.timestamp in 0..DUPLICATE_WINDOW_MS }
+}
 
 fun addHistoryEntry(context: PlatformContext, entry: HistoryEntry) {
     val entries = loadHistory(context).toMutableList()
@@ -18,8 +79,16 @@ fun addHistoryEntry(context: PlatformContext, entry: HistoryEntry) {
 fun loadHistory(context: PlatformContext): List<HistoryEntry> {
     val json = loadHistoryJson(context)
     if (json.isBlank()) return emptyList()
-    return historyFromJson(json)
+    val entries = historyFromJson(json)
+    val days = PrivacySettings.retentionDays(context)
+    if (days <= 0) return entries
+    val kept = pruneOlderThan(entries, currentTimeMillis() - days * DAY_MS)
+    if (kept.size != entries.size) saveHistory(context, kept)
+    return kept
 }
+
+fun pruneOlderThan(entries: List<HistoryEntry>, cutoffMs: Long): List<HistoryEntry> =
+    entries.filter { it.timestamp >= cutoffMs }
 
 fun deleteHistoryEntry(context: PlatformContext, id: String) {
     val entries = loadHistory(context).filter { it.id != id }

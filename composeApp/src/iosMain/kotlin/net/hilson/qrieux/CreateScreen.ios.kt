@@ -15,10 +15,7 @@ fun CreateScreen(initialText: String? = null) {
             platformContext = platformContext,
             initialText = initialText,
             onGenerated = { payload, type ->
-                addHistoryEntry(platformContext, HistoryEntry(
-                    generateUuid(), currentTimeMillis(),
-                    HistoryEntryType.GENERATE, payload, type.name
-                ))
+                net.hilson.qrieux.history.recordHistory(platformContext, HistoryEntryType.GENERATE, payload, type.name)
             }
         )
     }

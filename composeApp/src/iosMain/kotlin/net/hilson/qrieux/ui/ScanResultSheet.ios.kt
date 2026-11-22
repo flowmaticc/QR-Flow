@@ -48,19 +48,8 @@ fun ScanResultOverlay(
 ) {
     val platformContext = IosContext()
     val toastCopied = stringResource(Res.string.toast_copied)
-    val rawValue = when (contentType) {
-        is QrContentType.Url -> contentType.url
-        is QrContentType.Email -> contentType.email
-        is QrContentType.Phone -> contentType.phone
-        is QrContentType.Wifi -> contentType.ssid
-        is QrContentType.Contact -> buildString {
-            append(contentType.fullName)
-            if (contentType.phone.isNotEmpty()) append("\n${contentType.phone}")
-            if (contentType.email.isNotEmpty()) append("\n${contentType.email}")
-            if (contentType.organization.isNotEmpty()) append("\n${contentType.organization}")
-        }
-        is QrContentType.Text -> contentType.text
-    }
+    val report = androidx.compose.runtime.remember(contentType) { net.hilson.qrieux.security.QrRiskAnalyzer.analyze(contentType) }
+    val rawValue = net.hilson.qrieux.security.QrRiskAnalyzer.revealHiddenCharacters(contentType.displayText())
 
     Box(
         modifier = Modifier
@@ -104,7 +93,9 @@ fun ScanResultOverlay(
                 )
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            RiskPanel(report)
+            Spacer(modifier = Modifier.height(24.dp))
 
             val onCopied = { onShowMessage(toastCopied) }
             when (contentType) {
@@ -114,6 +105,8 @@ fun ScanResultOverlay(
                 is QrContentType.Wifi -> WifiActions(contentType, onDismiss, platformContext, onCopied, onShowMessage)
                 is QrContentType.Contact -> ContactActions(contentType, onDismiss, platformContext, onCopied)
                 is QrContentType.Text -> TextActions(contentType.text, onDismiss, platformContext, onCopied)
+                // Copy/share only on iOS for now; the Android build has the dedicated actions.
+                else -> TextActions(contentType.displayText(), onDismiss, platformContext, onCopied)
             }
         }
     }

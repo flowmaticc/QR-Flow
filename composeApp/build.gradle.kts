@@ -78,11 +78,12 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "net.hilson.qrieux"
+        // QR-Flow: privacy/security fork of QRieux (MIT). Own id so both apps can coexist.
+        applicationId = "com.flowmaticc.qrflow"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 26
-        versionName = "1.9.2"
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     signingConfigs {
@@ -110,10 +111,10 @@ android {
     buildTypes {
         getByName("debug") {
             applicationIdSuffix = ".dev"
-            resValue("string", "app_name", "QRieux Dev")
+            resValue("string", "app_name", "QR-Flow Dev")
         }
         getByName("release") {
-            resValue("string", "app_name", "QRieux")
+            resValue("string", "app_name", "QR-Flow")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

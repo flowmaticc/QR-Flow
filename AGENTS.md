@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **QR-Flow** is a privacy/security fork of QRieux (applicationId `com.flowmaticc.qrflow`). Scanning uses ZXing (no ML Kit, no Google services) and the app must never request the INTERNET permission. Security heuristics live in `commonMain/.../security/QrRiskAnalyzer.kt`; privacy settings and incognito in `history/HistoryRepository.kt` (`PrivacySettings`, `recordHistory`).
+
 This file provides guidance to AI Agents working on this project
 
 **⚠️ Public repo** — never commit secrets, API keys, or credentials to GitHub.
@@ -44,7 +46,7 @@ just e2e-clean                  # Remove E2E artifacts and logs — always use t
 
 **Debug vs Release:**
 
-- Debug build has applicationId suffix `.dev` and app name "QRieux Dev" (can install alongside release)
+- Debug build has applicationId suffix `.dev` and app name "QR-Flow Dev" (can install alongside release)
 
 ## Architecture
 

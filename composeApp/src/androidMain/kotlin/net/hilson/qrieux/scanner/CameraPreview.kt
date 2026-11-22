@@ -63,6 +63,21 @@ import net.hilson.qrieux.R
 import net.hilson.qrieux.vibrate
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.ZoomIn
+import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.camera.core.FocusMeteringAction
+import java.util.concurrent.TimeUnit
+import org.jetbrains.compose.resources.stringResource as sharedStringResource
+import qr_scanner.composeapp.generated.resources.Res
+import qr_scanner.composeapp.generated.resources.incognito_mode
+import qr_scanner.composeapp.generated.resources.incognito_turn_off
+import qr_scanner.composeapp.generated.resources.incognito_turn_on
 
 @Composable
 fun CameraPreview(
@@ -71,20 +86,26 @@ fun CameraPreview(
     onGalleryClick: () -> Unit,
     modifier: Modifier = Modifier,
     demoMode: Boolean = false,
-    demoBackgroundPath: String? = null
+    demoBackgroundPath: String? = null,
+    incognito: Boolean = false,
+    onToggleIncognito: () -> Unit = {}
 ) {
     if (demoMode) {
         DemoCameraPreview(
             onGalleryClick = onGalleryClick,
             modifier = modifier,
-            backgroundPath = demoBackgroundPath
+            backgroundPath = demoBackgroundPath,
+            incognito = incognito,
+            onToggleIncognito = onToggleIncognito
         )
     } else {
         LiveCameraPreview(
             onQrCodeDetected = onQrCodeDetected,
             isScanning = isScanning,
             onGalleryClick = onGalleryClick,
-            modifier = modifier
+            modifier = modifier,
+            incognito = incognito,
+            onToggleIncognito = onToggleIncognito
         )
     }
 }
@@ -93,7 +114,9 @@ fun CameraPreview(
 private fun DemoCameraPreview(
     onGalleryClick: () -> Unit,
     modifier: Modifier = Modifier,
-    backgroundPath: String? = null
+    backgroundPath: String? = null,
+    incognito: Boolean = false,
+    onToggleIncognito: () -> Unit = {}
 ) {
     val bgBitmap = remember(backgroundPath) {
         backgroundPath?.let { BitmapFactory.decodeFile(it)?.asImageBitmap() }
@@ -127,7 +150,9 @@ private fun DemoCameraPreview(
             CameraButtons(
                 flashEnabled = false,
                 onFlashClick = {},
-                onGalleryClick = onGalleryClick
+                onGalleryClick = onGalleryClick,
+                incognito = incognito,
+                onToggleIncognito = onToggleIncognito
             )
         }
     }
@@ -138,7 +163,9 @@ private fun LiveCameraPreview(
     onQrCodeDetected: (String) -> Unit,
     isScanning: Boolean,
     onGalleryClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    incognito: Boolean = false,
+    onToggleIncognito: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -172,6 +199,37 @@ private fun LiveCameraPreview(
         onDispose {
             cameraExecutor.shutdown()
         }
+    }
+
+    // Tap to focus, double tap / pinch to zoom: small or far codes come out blurry otherwise.
+    var previewViewRef by remember { mutableStateOf<PreviewView?>(null) }
+    var zoomRatio by remember { mutableFloatStateOf(1f) }
+    var focusPoint by remember { mutableStateOf<Offset?>(null) }
+    LaunchedEffect(focusPoint) {
+        if (focusPoint != null) {
+            kotlinx.coroutines.delay(1200)
+            focusPoint = null
+        }
+    }
+
+    fun setZoom(ratio: Float) {
+        val cam = camera ?: return
+        val state = cam.cameraInfo.zoomState.value
+        val clamped = ratio.coerceIn(state?.minZoomRatio ?: 1f, state?.maxZoomRatio ?: 1f)
+        zoomRatio = clamped
+        cam.cameraControl.setZoomRatio(clamped)
+    }
+
+    fun focusAt(point: Offset) {
+        val view = previewViewRef ?: return
+        val cam = camera ?: return
+        val meteringPoint = view.meteringPointFactory.createPoint(point.x, point.y)
+        val action = FocusMeteringAction.Builder(
+            meteringPoint,
+            FocusMeteringAction.FLAG_AF or FocusMeteringAction.FLAG_AE
+        ).setAutoCancelDuration(3, TimeUnit.SECONDS).build()
+        cam.cameraControl.startFocusAndMetering(action)
+        focusPoint = point
     }
 
     // Force LTR so button positions don't flip in RTL locales (camera UI is ergonomic, not directional)
@@ -217,19 +275,101 @@ private fun LiveCameraPreview(
                         }
                     }, ContextCompat.getMainExecutor(ctx))
 
+                    previewViewRef = previewView
                     previewView
                 },
                 modifier = Modifier.fillMaxSize()
             )
 
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .semantics { testTag = "camera_gestures" }
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { focusAt(it) },
+                            onDoubleTap = {
+                                setZoom(
+                                    when {
+                                        zoomRatio < 1.9f -> 2f
+                                        zoomRatio < 3.9f -> 4f
+                                        else -> 1f
+                                    }
+                                )
+                                focusAt(it)
+                            }
+                        )
+                    }
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, _, zoom, _ ->
+                            if (zoom != 1f) setZoom(zoomRatio * zoom)
+                        }
+                    }
+            )
+
             ScanOverlay()
+
+            focusPoint?.let { p ->
+                Canvas(Modifier.fillMaxSize()) {
+                    drawCircle(Color.White, radius = 36.dp.toPx(), center = p, style = Stroke(width = 3.dp.toPx()))
+                }
+            }
+
+            // Just under the scan frame (same geometry as ScanOverlay), clear of the tab bar.
+            BoxWithConstraints(Modifier.fillMaxSize()) {
+                val frameSize = minOf(maxWidth, maxHeight) * 0.7f
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = (maxHeight + frameSize) / 2 + 12.dp, start = 24.dp, end = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Big, visible zoom control: gestures alone are hard to discover.
+                    androidx.compose.material3.Button(
+                        onClick = {
+                            setZoom(
+                                when {
+                                    zoomRatio < 1.9f -> 2f
+                                    zoomRatio < 3.9f -> 4f
+                                    else -> 1f
+                                }
+                            )
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = Color.Black.copy(alpha = 0.6f),
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier.height(56.dp).semantics { testTag = "zoom_button" }
+                    ) {
+                        Icon(
+                            imageVector = if (zoomRatio < 3.9f) Icons.Default.ZoomIn else Icons.Default.ZoomOut,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        androidx.compose.foundation.layout.Spacer(Modifier.size(8.dp))
+                        Text("%.0f×".format(zoomRatio), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        text = stringResource(R.string.camera_gesture_hint),
+                        color = Color.White,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(top = 6.dp)
+                            .background(Color.Black.copy(alpha = 0.45f), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                            .padding(horizontal = 10.dp, vertical = 3.dp)
+                    )
+                }
+            }
             CameraButtons(
                 flashEnabled = flashEnabled,
                 onFlashClick = {
                     flashEnabled = !flashEnabled
                     camera?.cameraControl?.enableTorch(flashEnabled)
                 },
-                onGalleryClick = onGalleryClick
+                onGalleryClick = onGalleryClick,
+                incognito = incognito,
+                onToggleIncognito = onToggleIncognito
             )
         }
     }
@@ -239,7 +379,9 @@ private fun LiveCameraPreview(
 private fun CameraButtons(
     flashEnabled: Boolean,
     onFlashClick: () -> Unit,
-    onGalleryClick: () -> Unit
+    onGalleryClick: () -> Unit,
+    incognito: Boolean = false,
+    onToggleIncognito: () -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -267,6 +409,45 @@ private fun CameraButtons(
                 ),
                 modifier = Modifier.size(32.dp)
             )
+        }
+
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            FilledIconButton(
+                onClick = onToggleIncognito,
+                modifier = Modifier
+                    .size(64.dp)
+                    .semantics { testTag = "incognito_button" },
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = if (incognito) Color(0xFF6A1B9A) else Color.Black.copy(alpha = 0.5f),
+                    contentColor = Color.White
+                )
+            ) {
+                Icon(
+                    imageVector = if (incognito) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = sharedStringResource(
+                        if (incognito) Res.string.incognito_turn_off else Res.string.incognito_turn_on
+                    ),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+            if (incognito) {
+                Text(
+                    text = sharedStringResource(Res.string.incognito_mode),
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .background(Color(0xFF6A1B9A), androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
+                        .padding(horizontal = 10.dp, vertical = 2.dp)
+                        .semantics { testTag = "incognito_label" }
+                )
+            }
         }
 
         FilledIconButton(

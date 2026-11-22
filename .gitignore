@@ -52,3 +52,6 @@ compose-multiplatform-core
 
 # Local scratch space (fastlane's rsync shim and iOS build output)
 .tmp/
+
+# QR-Flow local test builds
+dist/

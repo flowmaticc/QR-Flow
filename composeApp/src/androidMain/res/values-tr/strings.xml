@@ -54,7 +54,7 @@
     <string name="tab_help">Yardım</string>
 
     <!--  Help Screen -->
-    <string name="help_screen_title">QRieux Nasıl Kullanılır</string>
+    <string name="help_screen_title">QR-Flow Nasıl Kullanılır</string>
     <string name="help_supported_formats_title">Desteklenen Formatlar</string>
     <string name="help_supported_formats_desc">QR kodlar, EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec ve Data Matrix.</string>
     <string name="navigate_back">Geri</string>

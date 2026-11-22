@@ -44,7 +44,9 @@ import net.hilson.qrieux.ui.ScanResultOverlay
 import net.hilson.qrieux.ui.theme.QRieuxTheme
 import net.hilson.qrieux.history.HistoryEntry
 import net.hilson.qrieux.history.HistoryEntryType
-import net.hilson.qrieux.history.addHistoryEntry
+import net.hilson.qrieux.history.PrivacySettings
+import net.hilson.qrieux.history.deleteHistoryEntry
+import net.hilson.qrieux.history.recordHistory
 import net.hilson.qrieux.history.reverseParseToFormData
 import net.hilson.qrieux.util.QrContentType
 import net.hilson.qrieux.vibrate
@@ -87,6 +89,19 @@ fun App(
         }
         var historyDetailEntry by remember { mutableStateOf<HistoryEntry?>(null) }
         var pendingEditEntry by remember { mutableStateOf<HistoryEntry?>(null) }
+        var incognito by remember { mutableStateOf(PrivacySettings.incognito(platformContext)) }
+        // Id of the entry the current scan result was saved as, so it can be dropped right away.
+        var lastScanId by remember { mutableStateOf<String?>(null) }
+        val forgottenMessage = sharedStringResource(Res.string.history_forgotten)
+
+        // The privacy dialog in History can change the setting too.
+        LaunchedEffect(appMode) { incognito = PrivacySettings.incognito(platformContext) }
+        LaunchedEffect(incognito) { setScreenSecure(platformContext, incognito) }
+
+        fun onScanned(raw: String) {
+            scannedContent = QrContentType.fromRawValue(raw)
+            lastScanId = recordHistory(platformContext, HistoryEntryType.SCAN, raw)
+        }
 
         LaunchedEffect(shareTimestamp) {
             if (shareTimestamp > 0L) {
@@ -96,8 +111,7 @@ fun App(
                     val result = scanBarcodeFromUri(context, uri)
                     if (result != null) {
                         vibrate(AndroidContext(context))
-                        scannedContent = QrContentType.fromRawValue(result)
-                        addHistoryEntry(platformContext, HistoryEntry(generateUuid(), currentTimeMillis(), HistoryEntryType.SCAN, result))
+                        onScanned(result)
                     } else {
                         snackbarHostState.showSnackbar(noQrFoundMessage)
                     }
@@ -117,8 +131,7 @@ fun App(
                     val result = scanBarcodeFromUri(context, it)
                     if (result != null) {
                         vibrate(AndroidContext(context))
-                        scannedContent = QrContentType.fromRawValue(result)
-                        addHistoryEntry(platformContext, HistoryEntry(generateUuid(), currentTimeMillis(), HistoryEntryType.SCAN, result))
+                        onScanned(result)
                     } else {
                         snackbarHostState.showSnackbar(noQrFoundMessage)
                     }
@@ -185,10 +198,7 @@ fun App(
                             initialType = editData?.first,
                             initialForm = editData?.second,
                             onGenerated = { payload, type ->
-                                addHistoryEntry(platformContext, HistoryEntry(
-                                    generateUuid(), currentTimeMillis(),
-                                    HistoryEntryType.GENERATE, payload, type.name
-                                ))
+                                recordHistory(platformContext, HistoryEntryType.GENERATE, payload, type.name)
                             }
                         )
                     }
@@ -235,9 +245,11 @@ fun App(
                     // CameraButtons and ScanResultOverlay apply their own top insets.
                     Box(modifier = Modifier.fillMaxSize()) {
                         CameraPreview(
-                            onQrCodeDetected = { rawValue ->
-                                scannedContent = QrContentType.fromRawValue(rawValue)
-                                addHistoryEntry(platformContext, HistoryEntry(generateUuid(), currentTimeMillis(), HistoryEntryType.SCAN, rawValue))
+                            onQrCodeDetected = { rawValue -> onScanned(rawValue) },
+                            incognito = incognito,
+                            onToggleIncognito = {
+                                incognito = !incognito
+                                PrivacySettings.setIncognito(platformContext, incognito)
                             },
                             isScanning = scannedContent == null,
                             onGalleryClick = {
@@ -251,7 +263,15 @@ fun App(
                         scannedContent?.let { content ->
                             ScanResultOverlay(
                                 contentType = content,
-                                onDismiss = { scannedContent = null },
+                                onDismiss = { scannedContent = null; lastScanId = null },
+                                incognito = incognito,
+                                onForget = lastScanId?.let { id ->
+                                    {
+                                        deleteHistoryEntry(platformContext, id)
+                                        lastScanId = null
+                                        scope.launch { snackbarHostState.showSnackbar(forgottenMessage) }
+                                    }
+                                },
                                 // The scanner Box fills the screen, so the bottom bar is
                                 // drawn over it: the overlay keeps its actions above it.
                                 contentPadding = paddingValues

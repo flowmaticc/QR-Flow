@@ -54,7 +54,7 @@
     <string name="tab_help">உதவி</string>
 
     <!--  Help Screen -->
-    <string name="help_screen_title">QRieux பயன்படுத்துவது எப்படி</string>
+    <string name="help_screen_title">QR-Flow பயன்படுத்துவது எப்படி</string>
     <string name="help_supported_formats_title">ஆதரிக்கப்படும் வடிவங்கள்</string>
     <string name="help_supported_formats_desc">QR குறியீடுகள், EAN-8, EAN-13, Code 128, Code 39, Code 93, UPC-E, PDF417, Aztec மற்றும் Data Matrix.</string>
     <string name="navigate_back">பின்செல்</string>

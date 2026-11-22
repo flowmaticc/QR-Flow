@@ -27,10 +27,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        cleanShareCache(this)
+        handleIncognitoIntent(intent)
         handleShareIntent(intent)
+        publishIncognitoShortcut()
 
-        val screenshotBg = intent?.getStringExtra("SCREENSHOT_BACKGROUND")
-        val demoCamera = intent?.getBooleanExtra("DEMO_CAMERA", false) ?: false
+        // The activity is exported: test-only extras are honoured on debuggable builds only,
+        // so other apps cannot drive a release build into demo mode.
+        val debuggable = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        val screenshotBg = if (debuggable) intent?.getStringExtra("SCREENSHOT_BACKGROUND") else null
+        val demoCamera = debuggable && (intent?.getBooleanExtra("DEMO_CAMERA", false) ?: false)
 
         setContent {
             // testTagsAsResourceId makes Compose testTag appear as resource-id in the
@@ -51,7 +57,41 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleIncognitoIntent(intent)
         handleShareIntent(intent)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        cleanShareCache(this)
+    }
+
+    private fun handleIncognitoIntent(intent: Intent?) {
+        // Only ever turns incognito on, so any app may send it without risk.
+        if (intent?.action == ACTION_SCAN_INCOGNITO) {
+            getSharedPreferences("qrieux", MODE_PRIVATE).edit().putBoolean("qf_incognito", true).apply()
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+
+    private fun publishIncognitoShortcut() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) return
+        try {
+            val manager = getSystemService(android.content.pm.ShortcutManager::class.java) ?: return
+            val label = getString(R.string.shortcut_scan_incognito)
+            val shortcut = android.content.pm.ShortcutInfo.Builder(this, "scan_incognito")
+                .setShortLabel(label)
+                .setLongLabel(label)
+                .setIcon(android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_shortcut_incognito))
+                .setIntent(Intent(this, MainActivity::class.java).setAction(ACTION_SCAN_INCOGNITO))
+                .build()
+            manager.dynamicShortcuts = listOf(shortcut)
+        } catch (_: Exception) {}
+    }
+
+    companion object {
+        const val ACTION_SCAN_INCOGNITO = "net.hilson.qrieux.action.SCAN_INCOGNITO"
+        private const val MAX_VCARD_BYTES = 256 * 1024
     }
 
     private fun handleShareIntent(intent: Intent?) {
@@ -96,7 +136,17 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun readAndStripVCard(uri: Uri): String? {
-        val raw = contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: return null
+        // A shared file can be arbitrarily large: read at most 256 KB instead of the whole stream.
+        val raw = contentResolver.openInputStream(uri)?.use { input ->
+            val buffer = ByteArray(MAX_VCARD_BYTES)
+            var total = 0
+            while (total < buffer.size) {
+                val n = input.read(buffer, total, buffer.size - total)
+                if (n < 0) break
+                total += n
+            }
+            String(buffer, 0, total, Charsets.UTF_8)
+        } ?: return null
         val allowedPrefixes = listOf(
             "BEGIN:", "END:", "VERSION:", "N:", "N;", "FN:", "FN;",
             "TEL:", "TEL;", "EMAIL:", "EMAIL;", "ORG:", "ORG;",

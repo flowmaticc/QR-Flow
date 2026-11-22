@@ -30,7 +30,7 @@ private fun parseWifiToForm(rawValue: String): QrGeneratorFormData {
             wifiSsid = parsed.ssid,
             wifiPassword = parsed.password,
             wifiSecurity = when (parsed.authType.uppercase()) {
-                "WPA" -> QrWifiSecurity.WpaWpa2
+                "WPA", "WPA2", "WPA3", "SAE" -> QrWifiSecurity.WpaWpa2
                 "WEP" -> QrWifiSecurity.Wep
                 else -> QrWifiSecurity.None
             },
@@ -51,15 +51,5 @@ fun percentEncode(s: String): String = buildString {
     }
 }
 
-fun displayLabel(entry: HistoryEntry): String {
-    val content = QrContentType.fromRawValue(entry.rawValue)
-    val value = when (content) {
-        is QrContentType.Url -> content.url
-        is QrContentType.Email -> content.email
-        is QrContentType.Phone -> content.phone
-        is QrContentType.Wifi -> content.ssid
-        is QrContentType.Contact -> content.fullName.ifEmpty { content.phone.ifEmpty { content.email } }
-        is QrContentType.Text -> content.text
-    }
-    return value.lineSequence().first().take(80)
-}
+fun displayLabel(entry: HistoryEntry): String =
+    QrContentType.fromRawValue(entry.rawValue).shortLabel()
