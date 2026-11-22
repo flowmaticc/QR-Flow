@@ -1,2 +1,0 @@
-• Tarama sonucu, QR kod, karşılama ve kamera izni ekranları artık telefon yan tutulduğunda da sığıyor
-• Koyu zemin üzerine açık renkli kodlar artık tanınıyor

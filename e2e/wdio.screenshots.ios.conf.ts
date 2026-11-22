@@ -32,7 +32,7 @@ export const config: WebdriverIO.Config = {
     platformName: 'iOS',
     'appium:automationName': 'XCUITest',
     'appium:app': findIosAppPath(),
-    'appium:bundleId': 'net.hilson.qrieux',
+    'appium:bundleId': 'com.flowmaticc.qrflow',
     'appium:deviceName': process.env.SCREENSHOT_DEVICE || 'iPhone 16 Pro Max',
     'appium:platformVersion': process.env.E2E_PLATFORM_VERSION || '26.2',
     ...(process.env.SCREENSHOT_UDID ? { 'appium:udid': process.env.SCREENSHOT_UDID } : {}),
@@ -61,9 +61,9 @@ export const config: WebdriverIO.Config = {
     // the terminate/reactivate cycle (Appium's -AppleLanguages launch arg is lost
     // on reactivation, which breaks Compose Multiplatform's stringResource locale).
     try {
-      execSync('xcrun simctl privacy booted grant photos net.hilson.qrieux');
+      execSync('xcrun simctl privacy booted grant photos com.flowmaticc.qrflow');
       const dataContainer = execSync(
-        'xcrun simctl get_app_container booted net.hilson.qrieux data'
+        'xcrun simctl get_app_container booted com.flowmaticc.qrflow data'
       ).toString().trim();
       execSync(`touch '${dataContainer}/Documents/.demo_camera'`);
       if (bgPath) {
@@ -71,13 +71,13 @@ export const config: WebdriverIO.Config = {
       }
       // Persist locale in app user defaults so Compose picks it up after restart
       execSync(
-        `xcrun simctl spawn booted defaults write net.hilson.qrieux AppleLanguages -array '${lang}'`
+        `xcrun simctl spawn booted defaults write com.flowmaticc.qrflow AppleLanguages -array '${lang}'`
       );
       execSync(
-        `xcrun simctl spawn booted defaults write net.hilson.qrieux AppleLocale '${locale}'`
+        `xcrun simctl spawn booted defaults write com.flowmaticc.qrflow AppleLocale '${locale}'`
       );
-      await driver.terminateApp('net.hilson.qrieux');
-      await driver.activateApp('net.hilson.qrieux');
+      await driver.terminateApp('com.flowmaticc.qrflow');
+      await driver.activateApp('com.flowmaticc.qrflow');
     } catch (e) {
       console.warn('[ios] Failed to set up demo mode:', e);
     }

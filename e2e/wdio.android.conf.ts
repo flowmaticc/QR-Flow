@@ -15,7 +15,7 @@ export const config: WebdriverIO.Config = {
     // Pin the target so a phone plugged into the machine can never be picked up
     // instead of the emulator the suite is calibrated against.
     'appium:udid': process.env.E2E_DEVICE_SERIAL || 'emulator-5554',
-    'appium:appPackage': 'net.hilson.qrieux.dev',
+    'appium:appPackage': 'com.flowmaticc.qrflow.dev',
     'appium:appActivity': 'net.hilson.qrieux.MainActivity',
     'appium:autoGrantPermissions': true,
     'appium:clearDeviceLogsOnStart': true,

@@ -1,7 +1,6 @@
 # QR-Flow
 
-Lector QR **seguro y privado** para Android. Variante de [QRieux](https://github.com/abumalick/QRieux)
-(© 2025 Emmanuel Hilson, licencia MIT), con id propio `com.flowmaticc.qrflow`, así que puede convivir con el original.
+Lector QR **seguro y privado** para Android.
 
 ## Qué añade QR-Flow
 
@@ -43,70 +42,6 @@ Requiere JDK 17 y el Android SDK (API 36).
 
 Integración prevista con Garbillo: [docs/INTEGRACION_GARBILLO.md](docs/INTEGRACION_GARBILLO.md).
 
----
+## Créditos
 
-*README original de QRieux:*
-
-# QRieux
-
-A simple, ad-free QR code scanner designed for everyone — especially our parents and grandparents.
-
-<p align="center">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1_scanner.png" width="250" alt="Scanner">
-  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2_url_result.png" width="250" alt="URL Result">
-</p>
-
-<p align="center">
-  <a href="https://f-droid.org/packages/net.hilson.qrieux/"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" height="70" alt="Get it on F-Droid"></a>
-  <a href="https://play.google.com/store/apps/details?id=net.hilson.qrieux"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="70" alt="Get it on Google Play"></a>
-  <a href="https://apps.apple.com/app/id6758559665"><img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="47" alt="Download on the App Store"></a>
-</p>
-
-## Why QRieux?
-
-Finding a QR code scanner that is simple, ad-free, free, and privacy-respecting is nearly impossible. So I built one.
-
-- **No ads** — clean experience, no distractions
-- **No tracking** — your data stays on your device
-- **Simple UI** — large buttons, obvious actions
-- **Smart actions** — open links, call phones, send emails, connect to WiFi, copy, share
-- **Gallery scanning** — scan QR codes from photos
-- **Share to scan** — share images from other apps to scan
-- **Create QR codes** — for a website, email address, phone number, WiFi network or any text
-- **Multilingual** — 20 languages
-
-## Coming Soon
-
-- Security warnings for suspicious links (anti-phishing)
-
-## Tech Stack
-
-- Kotlin Multiplatform + Compose Multiplatform
-- CameraX for camera capture
-- ZXing for barcode scanning and generation
-- Material3 for UI
-
-## Build
-
-```bash
-# Debug build
-./gradlew :composeApp:assembleDebug
-
-# Release build (requires key.properties)
-./gradlew :composeApp:assembleRelease
-
-# Run tests
-./gradlew :composeApp:testDebugUnitTest
-```
-
-## Testing
-
-Open [examples/test-qr-codes.md](examples/test-qr-codes.md) to test scanning all supported QR code types (URLs, emails, phones, WiFi, plain text).
-
-## Contributing
-
-Contributions welcome! Please open an issue first to discuss what you'd like to change.
-
-## License
-
-[MIT](LICENSE)
+QR-Flow parte del código de **QRieux**, de Emmanuel Hilson, publicado con licencia MIT. Se conserva su aviso de copyright en [LICENSE](LICENSE). QR-Flow es un proyecto independiente: no tiene relación con el autor original ni con sus versiones publicadas.

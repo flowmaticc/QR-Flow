@@ -1,2 +1,0 @@
-• Le scan s'arrête après la détection d'un code (économise la batterie)
-• Appuyez sur "Scanner à nouveau" pour reprendre

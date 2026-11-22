@@ -1,1 +1,0 @@
-• L'écran du code QR s'affiche maintenant correctement quand le téléphone est tenu de côté

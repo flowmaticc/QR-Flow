@@ -21,9 +21,7 @@ just android-debug              # Build debug APK
 just android-release            # Build release bundle (requires key.properties)
 just ios-framework-debug        # Build iOS debug framework for simulator
 just ios-framework-release      # Build iOS release framework
-just ios-build                  # Build iOS app (App Store)
 just ios-run                    # Build + install on connected iPhone
-just ios-beta                   # Build + upload to TestFlight
 just gen-android-screenshots    # Generate Android screenshots (--skip-build, --locale=xx)
 just gen-ios-screenshots        # Generate iOS screenshots (--skip-build, --locale=xx)
 just test                       # Run all unit tests
@@ -171,39 +169,3 @@ have nothing to do with the app. `appium:udid` and the `ADB` helper both pin
 - Shell out to adb through `ADB` from `e2e/helpers/adb.ts`, never a bare `adb` — a bare call picks the wrong device when a phone is attached
 - **iOS selectors**: prefer `testTag` (maps to `accessibilityIdentifier`, use `~tag_name` in Appium). Add `.semantics { testTag = "name" }` in Compose and select with `$('~name')`. This is locale-agnostic — avoids hardcoded English text in selectors.
 - **Android selectors**: `testTagsAsResourceId` doesn't work in Compose Multiplatform, so use text/label matching via UiSelector
-
-## Fastlane
-
-All fastlane commands run from **project root** (Fastfile is at `fastlane/Fastfile`).
-
-```bash
-just bundle-install             # install fastlane
-
-# Android (Play Store)
-just android-validate           # test Play Store connection
-just android-metadata           # push metadata + changelogs
-just android-screenshots        # push images
-just android-production          # upload AAB to production track
-
-# iOS (App Store Connect)
-just ios-beta                   # build + upload to TestFlight
-just ios-metadata               # push metadata to ASC
-```
-
-**Android metadata** in `fastlane/metadata/android/{locale}/`:
-
-- `title.txt` (max 30 chars), `short_description.txt` (max 80 chars), `full_description.txt` (max 4000 chars)
-- `changelogs/{versionCode}.txt`, `images/`
-
-**iOS metadata** in `fastlane/metadata/ios/{locale}/`:
-
-- `release_notes.txt`
-
-Android locales: `en-US`, `zh-CN`, `hi-IN`, `es-ES`, `fr-FR`, `ar`, `bn-BD`, `pt-BR`, `ru-RU`, `ja-JP`, `id`, `de-DE`, `ur`, `tr-TR`, `ko-KR`, `vi`, `it-IT`, `th`, `ta-IN`, `sw`
-iOS locales: `en-US`, `zh-Hans`, `hi`, `es-ES`, `fr-FR`, `ar-SA`, `pt-BR`, `ru`, `ja`, `id`, `de-DE`, `tr`, `ko`, `vi`, `it`, `th`
-
-## Claude Commands
-
-### /release
-
-Full release process: analyzes changes since last tag, creates changelogs (all 20 locales), bumps version, builds bundle, uploads to Play Store production track, and creates git tag.

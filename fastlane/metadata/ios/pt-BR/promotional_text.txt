@@ -1,1 +1,0 @@
-Leitor e criador de QR code e código de barras. Sem anúncios, sem rastreamento, funciona offline.

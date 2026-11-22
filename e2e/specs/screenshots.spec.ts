@@ -114,7 +114,7 @@ describe('App Store Screenshots', () => {
       await shareImageToApp('url-https');
     } else {
       const containerPath = execSync(
-        'xcrun simctl get_app_container booted net.hilson.qrieux group.net.hilson.qrieux',
+        'xcrun simctl get_app_container booted com.flowmaticc.qrflow group.com.flowmaticc.qrflow',
       ).toString().trim();
       const fixturePath = path.join(__dirname, '..', 'fixtures', 'url-https.png');
       execSync(`cp '${fixturePath}' '${containerPath}/shared-image.jpg'`);

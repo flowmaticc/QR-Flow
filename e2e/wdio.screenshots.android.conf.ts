@@ -12,7 +12,7 @@ export const config: WebdriverIO.Config = {
     'appium:automationName': 'UiAutomator2',
     'appium:app': process.env.E2E_APP_PATH ||
       path.join(process.cwd(), '..', 'composeApp', 'build', 'outputs', 'apk', 'debug', 'composeApp-debug.apk'),
-    'appium:appPackage': 'net.hilson.qrieux.dev',
+    'appium:appPackage': 'com.flowmaticc.qrflow.dev',
     'appium:appActivity': 'net.hilson.qrieux.MainActivity',
     'appium:udid': process.env.ANDROID_SERIAL || undefined,
     'appium:autoGrantPermissions': true,

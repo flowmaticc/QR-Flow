@@ -1,1 +1,0 @@
-qr,qr code,código de barras,criador,scanner,escanear,offline,sem anúncios,privacidade

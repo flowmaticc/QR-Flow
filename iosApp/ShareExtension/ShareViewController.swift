@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 class ShareViewController: UIViewController {
 
     // Keep in sync with iOSApp
-    private let appGroupID = "group.net.hilson.qrieux"
+    private let appGroupID = "group.com.flowmaticc.qrflow"
     private let sharedImageName = "shared-image.jpg"
     private let sharedTextName = "shared-text.txt"
 

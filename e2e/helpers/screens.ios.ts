@@ -9,7 +9,7 @@ const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
 
 export async function shareImageToApp(fixtureName: string): Promise<void> {
   const containerPath = execSync(
-    'xcrun simctl get_app_container booted net.hilson.qrieux group.net.hilson.qrieux',
+    'xcrun simctl get_app_container booted com.flowmaticc.qrflow group.com.flowmaticc.qrflow',
   ).toString().trim();
 
   const fixturePath = path.join(FIXTURES_DIR, `${fixtureName}.png`);
@@ -403,7 +403,7 @@ export async function toggleWifiHidden(): Promise<void> {
 
 export async function shareVCardToApp(vcfContent: string): Promise<void> {
   const containerPath = execSync(
-    'xcrun simctl get_app_container booted net.hilson.qrieux group.net.hilson.qrieux',
+    'xcrun simctl get_app_container booted com.flowmaticc.qrflow group.com.flowmaticc.qrflow',
   ).toString().trim();
 
   // Strip vCard to QR-friendly fields (simulates what ShareExtension does)
@@ -440,7 +440,7 @@ function stripVCardForTest(vcard: string): string {
 }
 
 export async function reactivateApp(): Promise<void> {
-  await driver.activateApp('net.hilson.qrieux');
+  await driver.activateApp('com.flowmaticc.qrflow');
   await browser.pause(1000);
 }
 

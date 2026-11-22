@@ -39,7 +39,7 @@ export const config: WebdriverIO.Config = {
     platformName: 'iOS',
     'appium:automationName': 'XCUITest',
     'appium:app': findIosAppPath(),
-    'appium:bundleId': 'net.hilson.qrieux',
+    'appium:bundleId': 'com.flowmaticc.qrflow',
     'appium:deviceName': process.env.E2E_DEVICE_NAME || 'iPhone 16 Pro',
     'appium:platformVersion': process.env.E2E_PLATFORM_VERSION || '26.2',
     'appium:autoAcceptAlerts': true,
@@ -52,7 +52,7 @@ export const config: WebdriverIO.Config = {
     // Grant full photo library access before tests start so
     // UIImagePickerController shows all photos without the limited-access banner
     // Also grant for .dev suffix (debug builds)
-    for (const bundleId of ['net.hilson.qrieux', 'net.hilson.qrieux.dev']) {
+    for (const bundleId of ['com.flowmaticc.qrflow', 'com.flowmaticc.qrflow.dev']) {
       try { execSync(`xcrun simctl privacy booted grant photos ${bundleId}`); }
       catch (e) { console.warn(`[ios] Failed to grant photo access for ${bundleId}: ${e}`); }
     }

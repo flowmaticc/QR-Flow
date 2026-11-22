@@ -1,1 +1,0 @@
-qr,kode qr,barcode,pemindai,pembuat,pindai,offline,tanpa iklan,privasi,sederhana

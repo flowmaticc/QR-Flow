@@ -4,7 +4,7 @@ import UIKit
 @main
 struct iOSApp: App {
     // Keep in sync with ShareViewController
-    private let appGroupID = "group.net.hilson.qrieux"
+    private let appGroupID = "group.com.flowmaticc.qrflow"
     private let sharedImageName = "shared-image.jpg"
     private let sharedTextName = "shared-text.txt"
 

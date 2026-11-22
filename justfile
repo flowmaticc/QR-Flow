@@ -26,10 +26,6 @@ ios-framework-debug:
 ios-framework-release:
     ./gradlew :composeApp:linkReleaseFrameworkIosArm64
 
-# Build iOS app (App Store)
-ios-build:
-    bundle exec fastlane ios build
-
 # Build + install on connected iPhone
 ios-run:
     #!/usr/bin/env bash
@@ -46,10 +42,6 @@ ios-run:
     if [ -z "$DCTL_ID" ]; then echo "No iPhone found"; exit 1; fi
     echo "Installing on iPhone..."
     xcrun devicectl device install app --device "$DCTL_ID" "$APP_PATH/iosApp.app"
-
-# Build + upload to TestFlight
-ios-beta:
-    bundle exec fastlane ios beta
 
 # Tests
 
@@ -68,30 +60,6 @@ screenshot-record:
 # Verify current screens against committed baselines
 screenshot-verify:
     ./gradlew :composeApp:verifyRoborazziDebug
-
-# Fastlane - Android
-
-# Test Play Store connection
-android-validate:
-    bundle exec fastlane android validate_credentials
-
-# Push Android metadata + changelogs
-android-metadata:
-    bundle exec fastlane android upload_metadata
-
-# Push Android screenshots
-android-screenshots:
-    bundle exec fastlane android upload_screenshots
-
-# Upload AAB to production track
-android-production:
-    bundle exec fastlane android production
-
-# Fastlane - iOS
-
-# Push iOS metadata to App Store Connect
-ios-metadata:
-    bundle exec fastlane ios upload_metadata
 
 # Screenshot generation
 
@@ -161,6 +129,3 @@ e2e-screenshots-android *args:
 
 # Dependencies
 
-# Install fastlane and ruby dependencies
-bundle-install:
-    bundle install

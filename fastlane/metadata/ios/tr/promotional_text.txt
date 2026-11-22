@@ -1,1 +1,0 @@
-QR ve barkod tarayıcı & oluşturucu. Reklam yok, takip yok, çevrimdışı çalışır.

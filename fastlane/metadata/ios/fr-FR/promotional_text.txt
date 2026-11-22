@@ -1,1 +1,0 @@
-Scanner et créateur de codes QR & barres. Sans pub, sans tracking, hors ligne.

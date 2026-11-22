@@ -1,1 +1,0 @@
-Escáner y creador de códigos QR y barras. Sin anuncios, sin rastreo, funciona sin conexión.

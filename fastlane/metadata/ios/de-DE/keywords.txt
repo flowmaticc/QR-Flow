@@ -1,1 +1,0 @@
-qr,qr-code,barcode,scanner,ersteller,scannen,offline,keine werbung,datenschutz

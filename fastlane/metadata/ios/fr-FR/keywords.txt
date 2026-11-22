@@ -1,1 +1,0 @@
-qr,code qr,code-barres,scanner,créateur,scan,hors ligne,sans pub,simple

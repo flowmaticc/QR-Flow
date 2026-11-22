@@ -29,7 +29,7 @@ export async function shareImageToApp(fixtureName: string): Promise<void> {
   execSync(
     `${ADB} shell am start -a android.intent.action.SEND -t image/png -f 0x30000001 ` +
     `-d '${contentUri}' --eu android.intent.extra.STREAM '${contentUri}' ` +
-    `-n net.hilson.qrieux.dev/net.hilson.qrieux.MainActivity`,
+    `-n com.flowmaticc.qrflow.dev/net.hilson.qrieux.MainActivity`,
   );
   await browser.pause(2000);
 }
@@ -41,7 +41,7 @@ export async function shareTextToApp(text: string): Promise<void> {
   execSync(
     `${ADB} shell "am start -a android.intent.action.SEND -t text/plain ` +
     `-f 0x30000000 --es android.intent.extra.TEXT '${escaped}' ` +
-    `-n net.hilson.qrieux.dev/net.hilson.qrieux.MainActivity"`,
+    `-n com.flowmaticc.qrflow.dev/net.hilson.qrieux.MainActivity"`,
   );
   await browser.pause(2000);
 }
@@ -425,13 +425,13 @@ export async function shareVCardToApp(vcfContent: string): Promise<void> {
   execSync(
     `${ADB} shell am start -a android.intent.action.SEND -t text/x-vcard -f 0x30000001 ` +
     `-d '${contentUri}' --eu android.intent.extra.STREAM '${contentUri}' ` +
-    `-n net.hilson.qrieux.dev/net.hilson.qrieux.MainActivity`,
+    `-n com.flowmaticc.qrflow.dev/net.hilson.qrieux.MainActivity`,
   );
   await browser.pause(2000);
 }
 
 export async function reactivateApp(): Promise<void> {
-  await driver.activateApp('net.hilson.qrieux.dev');
+  await driver.activateApp('com.flowmaticc.qrflow.dev');
   await browser.pause(1000);
 }
 

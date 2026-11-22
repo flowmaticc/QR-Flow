@@ -1,3 +1,0 @@
-• Barcode scanning now runs on an open-source engine, so QRieux can be published on F-Droid
-• Faster scanning of barcodes held sideways
-• Large photos from the gallery are handled more reliably

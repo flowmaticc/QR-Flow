@@ -1,2 +1,0 @@
-• Scanning stops after detecting a code (saves battery)
-• Tap "Scan again" to resume scanning
